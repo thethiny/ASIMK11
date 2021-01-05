@@ -57,6 +57,7 @@ bool g_PresentHooked = false;
 
 void StartConsole()
 {
+	printf("Testing Console");
 	SettingsMgr->Init();
 	
 	if (SettingsMgr->bEnableConsoleWindow)
@@ -68,6 +69,7 @@ void StartConsole()
 	}
 
 	printf("MKXHook::OnInitializeHook() | Begin!\n");
+	return;
 	printf("MKXHook::OnInitializeHook() | Game detected: %s\n", MK10::GetGameName());
 	TheMenu->Initialize();
 }
@@ -106,6 +108,7 @@ HRESULT GetDeviceAndCtxFromSwapchain(IDXGISwapChain *pSwapChain, ID3D11Device **
 
 HRESULT __fastcall Present(IDXGISwapChain *pChain, UINT SyncInterval, UINT Flags)
 {
+	printf("I'm printing in Present");
 	if (!g_bInitialised) {
 		if (FAILED(GetDeviceAndCtxFromSwapchain(pChain, &pDevice, &pContext)))
 			return fnIDXGISwapChainPresent(pChain, SyncInterval, Flags);
@@ -230,6 +233,7 @@ void * Context[108];
 
 int WINAPI main()
 {
+	printf("Console Show");
 	StartConsole();
 	GetPresent();
 	if (!g_PresentHooked) {
