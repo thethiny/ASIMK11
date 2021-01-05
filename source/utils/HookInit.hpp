@@ -147,8 +147,8 @@ extern "C"
 	static LONG InitCount = 0;
 	__declspec(dllexport) void InitializeASI()
 	{
-		if (_InterlockedCompareExchange(&InitCount, 1, 0) != 0) return;
-		HookInit::InstallHooks();
+		/*if (_InterlockedCompareExchange(&InitCount, 1, 0) != 0) return;
+		HookInit::InstallHooks();*/
 	}
 
 #if defined(rsc_RevisionID) && defined(rsc_BuildID)
