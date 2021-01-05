@@ -22,9 +22,6 @@
     <Filter Include="Header Files\imgui">
       <UniqueIdentifier>{204aea69-2dd9-4b55-bb30-2fe21451d23f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\dxhook">
-      <UniqueIdentifier>{4471bcbc-4d4c-4e6c-adf2-3ded48621990}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="framework.h">
@@ -130,9 +127,6 @@
     </ClCompile>
     <ClCompile Include="code\mkxhook.cpp">
       <Filter>Header Files\code</Filter>
-    </ClCompile>
-    <ClCompile Include="dxhook.cpp">
-      <Filter>Header Files\dxhook</Filter>
     </ClCompile>
     <ClCompile Include="HookInit.cpp">
       <Filter>Source Files</Filter>
