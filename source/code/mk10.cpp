@@ -6,20 +6,20 @@
 
 const char * MK10::GetGameName()
 {
-	return ((const char*(__fastcall*)())GetMKXAddr(0x141606530))();
+	return ((const char*(__fastcall*)())GetGameAddr(0x141606530))();
 }
 
 void MK10::SetCharacter(PLAYER_NUM plr, const char * character)
 {
-	__int64 gameinfo = *(__int64*)GetMKXAddr(GFG_GAME_INFO);
+	__int64 gameinfo = *(__int64*)GetGameAddr(GFG_GAME_INFO);
 	printf("MKXHook::SetCharacter() | Setting side %d as %s\n", plr, character);
 
-	((void(__fastcall*)(int64, int, const char*))GetMKXAddr(0x1404972B0))(gameinfo, (int64)plr, character);
+	((void(__fastcall*)(int64, int, const char*))GetGameAddr(0x1404972B0))(gameinfo, (int64)plr, character);
 }
 
 void MK10::SlowGameTimeForXTicks(float speed, int ticks)
 {
-	((void(__fastcall*)(float, unsigned int))GetMKXAddr(0x140451EB0))(speed, ticks);
+	((void(__fastcall*)(float, unsigned int))GetGameAddr(0x140451EB0))(speed, ticks);
 }
 
 
@@ -57,14 +57,14 @@ int64 MK10Hooks::IsNPCCharacterMale(const char * character)
 void __fastcall MK10Hooks::HookProcessStuff()
 {
 	TheMenu->Process();
-	((void(__fastcall*)())GetMKXAddr(0x140CAE620))();
+	((void(__fastcall*)())GetGameAddr(0x140CAE620))();
 }
 
 void __fastcall MK10Hooks::HookStartupFightRecording()
 {
 	printf("MKXHook::Info() | Starting a new fight!\n");
 	// recording call
-	((void(__fastcall*)())GetMKXAddr(0x1403922B0))();
+	((void(__fastcall*)())GetGameAddr(0x1403922B0))();
 	if (TheMenu->bPlayer1ModifierEnabled)
 	    MK10::SetCharacter(PLAYER1,TheMenu->szPlayer1ModifierCharacter);
 	if (TheMenu->bPlayer2ModifierEnabled)
@@ -79,7 +79,7 @@ int64 __fastcall MK10Hooks::HookCheckIfCharacterFemale(const char * character)
 	if (IsNPCCharacter(character))
 		return IsNPCCharacterMale(character);
 	else
-		return ((int64(__fastcall*)(const char*))GetMKXAddr(0x14047F330))(character);;
+		return ((int64(__fastcall*)(const char*))GetGameAddr(0x14047F330))(character);;
 
 
 

@@ -140,7 +140,7 @@ void MK10Menu::Draw()
 		bool swap = ImGui::Button("Swap Player Positions");
 		ImGui::SameLine(); ShowHelpMarker("Shortcut - TODO");
 		if (swap)
-			((void(__fastcall*)())GetMKXAddr(0x14055AD40))();
+			((void(__fastcall*)())GetGameAddr(0x14055AD40))();
 
 		ImGui::Separator();
 		ImGui::Text("Gamespeed Control");
