@@ -8,10 +8,19 @@
 #include "code/mk10utils.h"
 #include "code/mk10menu.h"
 #include "code/eSettingsManager.h"
+#include "kiero.h"
+#include "imgui.h"
+#include "dx11kiero/ImGui DirectX 11 Kiero Hook/imgui/imgui_impl_win32.h"
+#include "dx11kiero/ImGui DirectX 11 Kiero Hook/imgui/imgui_impl_dx11.h"
+#include <d3d11.h>
+#include <dxgi.h>
 #include <iostream>
 #include <string>
 #include <filesystem>
 #include <chrono>
+
+typedef HRESULT(__stdcall* Present) (IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
+typedef LRESULT(CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
 
 using namespace Memory::VP;
 using namespace hook;
@@ -333,22 +342,6 @@ void HooksMain()
 		SetCheatPattern(SettingsMgr->pNoBrutalityReq, "pNoBrutalityReq", &(sCheatsStruct.lpBrut));
 		SetCheatPattern(SettingsMgr->pBrutalityAlwaysCorrect, "pBrutalityAlwaysCorrect", &(sCheatsStruct.lpBrutB));
 		SetCheatPattern(SettingsMgr->pMeteorAlwaysSpawns, "pMeteorAlwaysSpawns", &(sCheatsStruct.lpMeteor));
-		/*if (!SettingsMgr->pMercyAnyTime.empty())
-		{
-			std::cout << "Searching for pMercyAnyTime: " << SettingsMgr->pMercyAnyTime << std::endl;
-			uint64_t* lpPattern = find_pattern(GetModuleHandleA(NULL), SettingsMgr->pMercyAnyTime);
-			if (lpPattern != nullptr)
-			{
-				std::cout << "Found at: " << std::hex << lpPattern << std::dec << std::endl;
-				sCheatsStruct.lpMercy = lpPattern;
-			}
-			else
-			{
-				std::cout << "Not Found. pMercyAnyTime Disabled" << std::endl;
-			}
-		}*/
-		
-
 	}
 
 
@@ -619,13 +612,9 @@ void OnInitializeHook()
 
 	if (process_name != expected_process)
 	{
-		if (process_name != expected_process_dx12)
-			return;
-		else
-		{
+		if (process_name == expected_process_dx12)
 			MessageBoxA(NULL, "ASIMK11 doesn't support DX12 version of the game", "ASIMK11", 0);
-			return;
-		}
+		return;
 	}
 
 	SettingsMgr->Init();
