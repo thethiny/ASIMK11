@@ -38,7 +38,7 @@ public:
 	int iVKCheats;
 
 	/// Camera Mod Section
-	std::string hotkey_toggle;
+	std::string hotkey_toggle_camera;
 	std::string hotkey_xp;
 	std::string hotkey_xm;
 	std::string hotkey_yp;
@@ -74,7 +74,9 @@ public:
 	float fCamHold;
 	/// End of Cam Mod Section
 
-	int iHookMenuOpenKey;
+	// Menu Section
+	std::string hotkey_toggle_menu;
+	int iVKMenuToggle;
 
 };
 

@@ -1,85 +1,16 @@
-// MK11Hook
-// 17/Nov/2020 UMK11
+#include "includes.h"
 #include "pch.h"
-#include "utils/MemoryMgr.h"
-#include "utils/Trampoline.h"
-#include "utils/Patterns.h"
-#include "code/mk10.h"
-#include "code/mk10utils.h"
-#include "code/mk10menu.h"
-#include "code/eSettingsManager.h"
-#include "kiero.h"
-#include "imgui.h"
-#include "dx11kiero/ImGui DirectX 11 Kiero Hook/imgui/imgui_impl_win32.h"
-#include "dx11kiero/ImGui DirectX 11 Kiero Hook/imgui/imgui_impl_dx11.h"
-#include <d3d11.h>
-#include <dxgi.h>
-#include <iostream>
-#include <string>
-#include <filesystem>
-#include <chrono>
-
-typedef HRESULT(__stdcall* Present) (IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
-typedef LRESULT(CALLBACK* WNDPROC)(HWND, UINT, WPARAM, LPARAM);
+#include "code/mk11.h"
 
 using namespace Memory::VP;
 using namespace hook;
 
 #define MKPIPE TEXT("\\\\.\\pipe\\MK11Unlocker")
 
-int64 __fastcall GenericTrueReturn() { return 1; }
-int64 __fastcall GenericFalseReturn() { return 0; }
-
 void UnlockerPipe();
 void CamListener();
 void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
 
-std::string toLower(std::string s)
-{
-	std::string new_string("");
-	for (int i = 0; i < s.length(); i++)
-	{
-		new_string += std::tolower(s[i]);
-	}
-}
-
-std::string GetProcessName()
-{
-	CHAR fileName[MAX_PATH + 1];
-	DWORD chars = GetModuleFileNameA(NULL, fileName, MAX_PATH + 1);
-	if (chars)
-	{
-		std::string basename;
-		std::string filename = std::string(fileName);
-		size_t pos = filename.find_last_of('\\');
-		if (pos != -1)
-		{
-			basename = filename.substr(pos + 1);
-			return basename;
-		}
-		return filename;
-	}
-	return "";
-}
-
-std::string GetDirName()
-{
-	CHAR fileName[MAX_PATH + 1];
-	DWORD chars = GetModuleFileNameA(NULL, fileName, MAX_PATH + 1);
-	if (chars)
-	{
-		std::string basename;
-		std::string filename = std::string(fileName);
-		size_t pos = filename.find_last_of('\\');
-		if (pos != -1)
-		{
-			basename = filename.substr(0, pos);
-			return basename;
-		}
-		return filename;
-	}
-	return "";
-}
 
 void CreateConsole(bool bFreeze = false)
 {
@@ -118,18 +49,6 @@ uint64_t* __fastcall vr2_proxy_function(uint64_t seed, uint64_t* result_hash, co
 }
 
 
-HMODULE AwaitHModule(const char* name)
-{
-	HMODULE toAwait = NULL;
-	while (!toAwait)
-	{
-		toAwait = GetModuleHandle(name);
-	}
-	std::cout << "Obtained Handle for " << name << std::endl;
-	return toAwait;
-}
-
-
 HANDLE __stdcall CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
 {
 	wchar_t* wcFileName = (wchar_t*)lpFileName;
@@ -145,11 +64,6 @@ HANDLE __stdcall CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWOR
 		}
 	}
 	return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-}
-
-uint64_t stoui64h(std::string szString)
-{
-	return strtoull(szString.c_str(), nullptr, 16);
 }
 
 struct CamStruct {
@@ -214,15 +128,6 @@ uint64_t CamFunction(uint64_t lpCamPtr, uint64_t fValue)
 	return ((uint64_t(__fastcall*)(uint64_t, uint64_t))GetGameAddr(lpCamFunction))(lpCamPtr, fValue);
 }
 
-uint64_t* find_pattern(void* handle, std::string_view bytes)
-{
-	hook::pattern pCamPattern = hook::make_module_pattern(handle, bytes); // Make pattern external
-	if (!pCamPattern.count_hint(1).empty())
-	{
-		return pCamPattern.get(0).get<uint64_t>(0);
-	}
-	return nullptr;
-}
 
 void HooksMain()
 {
@@ -234,6 +139,8 @@ void HooksMain()
 	hKernelBase = AwaitHModule("kernelbase.dll");
 	hKernel32 = AwaitHModule("kernel32.dll");
 
+	printf("Initializing ImGui Menu\n");
+	GuiMenu->Initialize();
 
 
 	Trampoline* game_tramp = Trampoline::MakeTrampoline(GetModuleHandle(nullptr));
@@ -452,48 +359,17 @@ void HooksMain()
 
 }
 
-void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern)
-{
-	if (!pattern.empty())
-	{
-		std::cout << "Searching for " << name << ": " << pattern << std::endl;
-		*lpPattern = find_pattern(GetModuleHandleA(NULL), pattern);
-		if (*lpPattern != nullptr)
-		{
-			std::cout << "Found at: " << std::hex << *lpPattern << std::dec << std::endl;
-		}
-		else
-		{
-			std::cout << name << "Not found >> Disabled." << std::endl;
-		}
-	}
-}
-
-template <class CamType>
-void ListenCamHotkey(int VK_btn, CamType* addr, bool inc, double speed=SettingsMgr->fSpeed, float WaitDuration=SettingsMgr->fCamHold) // Eventually Change this Function to allow for Holding Shift by returning char as state. 0 = No, 1 = yes, -1 = shift.
-{
-	if (GetAsyncKeyState(VK_btn))
-	{
-		if (!inc)
-			speed = -speed;
-		*addr += speed;
-		auto start = std::chrono::system_clock::now();
-		while (GetAsyncKeyState(VK_btn))
-		{
-			std::chrono::duration<double> now = std::chrono::system_clock::now() - start;
-			if (now.count() > WaitDuration)
-			{
-				*addr += speed;
-				start = std::chrono::system_clock::now();
-			}
-		}
-	}
-}
 
 void CamListener()
 {
 	while (1) // Read Hotkeys and Speed from ini
 	{
+		// ImGui Menu
+		if (GetAsyncKeyState(SettingsMgr->iVKMenuToggle))
+		{
+			GuiMenu->ToggleActive();
+			while (GetAsyncKeyState(SettingsMgr->iVKMenuToggle)); // Wait
+		}
 		if (GetAsyncKeyState(SettingsMgr->iVKCamToggle))
 		{
 			sCamStruct.bCamActive = !sCamStruct.bCamActive;
@@ -510,20 +386,6 @@ void CamListener()
 		}
 		if (sCamStruct.bCamActive) // Check for Buttons to perform cam stuff
 		{
-			//if (GetAsyncKeyState(SettingsMgr->iVKxp))
-			//{
-			//	sCamStruct.fX += SettingsMgr->fSpeed;
-			//	auto start = std::chrono::system_clock::now();
-			//	while (GetAsyncKeyState(SettingsMgr->iVKxp))
-			//	{
-			//		std::chrono::duration<double> now = std::chrono::system_clock::now() - start;
-			//		if (now.count() > 0.15)
-			//		{
-			//			sCamStruct.fX += SettingsMgr->fSpeed;
-			//			start = std::chrono::system_clock::now();
-			//		}
-			//	}
-			//}
 			ListenCamHotkey(SettingsMgr->iVKxp, &(sCamStruct.fX), true);
 			ListenCamHotkey(SettingsMgr->iVKxm, &(sCamStruct.fX), false);
 			ListenCamHotkey(SettingsMgr->iVKyp, &(sCamStruct.fY), true);
@@ -632,6 +494,7 @@ bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
+		CreateThread(nullptr, 0, MenuGuiMainThread, hModule, 0, nullptr);
 		OnInitializeHook();
 		break;
 	case DLL_THREAD_ATTACH:

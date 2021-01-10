@@ -32,7 +32,7 @@ void eSettingsManager::Init()
 	iVKCheats = StringToVK(hotkey_cheats);
 
 	// Cam Settings
-	hotkey_toggle = ini.ReadString("Camera.Keys", "hotkey_toggle", "F2");
+	hotkey_toggle_camera = ini.ReadString("Camera.Keys", "hotkey_toggle", "F2");
 	hotkey_xp = ini.ReadString("Camera.Keys", "hotkey_x+", "NUMPAD8");
 	hotkey_xm = ini.ReadString("Camera.Keys", "hotkey_x-", "NUMPAD2");
 	hotkey_yp = ini.ReadString("Camera.Keys", "hotkey_y+", "RIGHT");
@@ -50,8 +50,8 @@ void eSettingsManager::Init()
 	hotkey_timestop = ini.ReadString("Camera.Keys", "hotkey_timestop", "NUMPAD0");
 	fSpeed = ini.ReadFloat("Camera.Config", "fSpeed", 5.0f);
 	fCamHold = ini.ReadInteger("Camera.Config", "fCamHold", 50)/1000.0f;
-	//Cam Load
-	iVKCamToggle = StringToVK(hotkey_toggle);
+	// Cam Load
+	iVKCamToggle = StringToVK(hotkey_toggle_camera);
 	iVKxp = StringToVK(hotkey_xp);
 	iVKxm = StringToVK(hotkey_xm);
 	iVKyp = StringToVK(hotkey_yp);
@@ -68,7 +68,9 @@ void eSettingsManager::Init()
 	iVKyawm = StringToVK(hotkey_yawm);
 	iVKtimestop = StringToVK(hotkey_timestop);
 
-	iHookMenuOpenKey = ini.ReadInteger("Settings", "iHookMenuOpenKey", VK_F1);
+	// Menu
+	hotkey_toggle_menu = ini.ReadString("Settings", "hotkey_menu", "F1");
+	iVKMenuToggle = StringToVK(hotkey_toggle_menu);
 
 }
 
