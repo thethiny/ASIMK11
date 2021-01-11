@@ -1,6 +1,7 @@
 #include "includes.h"
 #include "pch.h"
 #include "code/mk11.h"
+#include <tlhelp32.h> 
 
 using namespace Memory::VP;
 using namespace hook;
@@ -10,6 +11,7 @@ using namespace hook;
 void UnlockerPipe();
 void CamListener();
 void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
+std::vector<std::string> FindASIs();
 
 
 void CreateConsole(bool bFreeze = false)
@@ -66,14 +68,7 @@ HANDLE __stdcall CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWOR
 	return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
 }
 
-struct CamStruct {
-	float fX=0, fY=0, fZ=0; // Change to pointers
-	float fPOV=0;
-	int32_t iYaw=0, iPitch=0, iRot=0;
-	bool bLogCam = false; //Make it a flag to control prints
-	bool bCamActive = false;
-	uint32_t uCamSpeed = 5;
-} sCamStruct;
+
 
 uint64_t lpCamFunction;
 uint64_t lpCaughtCamPtr = NULL;
@@ -83,6 +78,20 @@ struct CheatsStruct {
 	uint64_t *lpMercy, *lpGround, *lpBrut, *lpBrutB, *lpMeteor;
 	bool bMercy = false, bGround = false, bBrut = false, bBrutB = false, bMeteor = false;
 } sCheatsStruct;
+
+void TimestopFunction(uint64_t somePtr, uint32_t rvalue)
+{
+	uint64_t rax = *(uint64_t*)(somePtr);
+
+	if (!sCamStruct.bTimestopActive)
+		rvalue = *(uint64_t*)(somePtr + 0x18);
+
+	if (*(uint64_t*)(somePtr + 0x14) == rvalue)
+		return;
+	uint64_t function_addr = *(uint64_t*)(rax + 0xD8);
+	*(uint64_t*)(somePtr + 0x14) = rvalue;
+	((void (*)(uint64_t, uint32_t))function_addr)(somePtr, rvalue);
+}
 
 uint64_t CamFunction(uint64_t lpCamPtr, uint64_t fValue)
 {
@@ -96,26 +105,41 @@ uint64_t CamFunction(uint64_t lpCamPtr, uint64_t fValue)
 	float* fPOV = (float*)(lpCamPtr + CamOffset + 24);
 	int32_t* iYaw = (int32_t*)(lpCamPtr + CamOffset + 16), *iPitch = (int32_t*)(lpCamPtr + CamOffset + 12), *iRot = (int32_t*)(lpCamPtr + CamOffset + 20);
 
-	if (!sCamStruct.bCamActive)
+	if (!sCamStruct.bEnableXYZ)
 	{
 		sCamStruct.fX = *fX;
 		sCamStruct.fY = *fY;
 		sCamStruct.fZ = *fZ;
-		sCamStruct.fPOV = *fPOV;
-		sCamStruct.iYaw = *iYaw;
-		sCamStruct.iPitch = *iPitch;
-		sCamStruct.iRot = *iRot;
 	}
 	else
 	{
 		*fX = sCamStruct.fX;
 		*fY = sCamStruct.fY;
 		*fZ = sCamStruct.fZ;
+	}
+
+	if (!sCamStruct.bEnablePOV)
+	{
+		sCamStruct.fPOV = *fPOV;
+	}
+	else
+	{
 		*fPOV = sCamStruct.fPOV;
+	}
+	if (!sCamStruct.bEnablePiYaRot)
+	{
+		sCamStruct.iYaw = *iYaw;
+		sCamStruct.iPitch = *iPitch;
+		sCamStruct.iRot = *iRot;
+	}
+	else
+	{
 		*iYaw = sCamStruct.iYaw;
 		*iPitch = sCamStruct.iPitch;
 		*iRot = sCamStruct.iRot;
 	}
+
+	sCamStruct.bCamActive = sCamStruct.bEnablePiYaRot | sCamStruct.bEnablePOV | sCamStruct.bEnableXYZ;
 
 	if (sCamStruct.bLogCam)
 	{
@@ -233,11 +257,23 @@ void HooksMain()
 
 			CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)CamListener, NULL, NULL, NULL);
 			std::cout << "Launched Cam Thread" << std::endl;
+			sCamStruct.bCamEnabled = true;
 
 		}
 		else
 		{
 			std::cout << "Couldn't Patch Camera Function. Camera Mod Disabled" << std::endl;
+		}
+		uint64_t* lpTimestopPattern = find_pattern(GetModuleHandleA(NULL), SettingsMgr->pTimestop);
+		if (lpTimestopPattern != nullptr)
+		{
+			std::cout << "Timestop Pattern found at: " << std::hex << lpTimestopPattern << std::endl;
+			InjectHook(GetGameAddr((uint64_t)lpTimestopPattern), game_tramp->Jump(TimestopFunction), PATCH_JUMP);
+			std::cout << "Patched TimeStop" << std::dec << std::endl;
+		}
+		else
+		{
+			std::cout << "Couldn't Patch Timestop Function. Timestop Mod Disabled" << std::endl;
 		}
 	}
 
@@ -254,6 +290,14 @@ void HooksMain()
 
 	while (1)
 	{
+		// ImGui Menu
+		if (GetAsyncKeyState(SettingsMgr->iVKMenuToggle))
+		{
+			GuiMenu->ToggleActive();
+			while (GetAsyncKeyState(SettingsMgr->iVKMenuToggle)); // Wait
+		}
+		
+
 		if (GetAsyncKeyState(VK_F10) && SettingsMgr->bPatchUnlocker)
 		{
 			while (GetAsyncKeyState(VK_F10)); // wait
@@ -364,12 +408,6 @@ void CamListener()
 {
 	while (1) // Read Hotkeys and Speed from ini
 	{
-		// ImGui Menu
-		if (GetAsyncKeyState(SettingsMgr->iVKMenuToggle))
-		{
-			GuiMenu->ToggleActive();
-			while (GetAsyncKeyState(SettingsMgr->iVKMenuToggle)); // Wait
-		}
 		if (GetAsyncKeyState(SettingsMgr->iVKCamToggle))
 		{
 			sCamStruct.bCamActive = !sCamStruct.bCamActive;
@@ -383,6 +421,21 @@ void CamListener()
 			}
 
 			while (GetAsyncKeyState(SettingsMgr->iVKCamToggle)); // wait until negative edge
+		}
+		if (GetAsyncKeyState(SettingsMgr->iVKtimestop))
+		{
+			sCamStruct.bTimestopActive = !sCamStruct.bTimestopActive;
+			if (sCamStruct.bTimestopActive)
+			{
+				std::cout << "TimeStop::On" << std::endl;
+			}
+			else
+			{
+				std::cout << "TimeStop::Off" << std::endl;
+			}
+
+			while (GetAsyncKeyState(SettingsMgr->iVKtimestop)); // wait until negative edge
+
 		}
 		if (sCamStruct.bCamActive) // Check for Buttons to perform cam stuff
 		{
@@ -487,6 +540,62 @@ void OnInitializeHook()
 	}
 
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)HooksMain, NULL, NULL, NULL);
+}
+
+std::vector<std::string> FindASIs(HMODULE hDllModule)
+{
+	/*HANDLE hModuleSnap = INVALID_HANDLE_VALUE;
+	MODULEENTRY32 me32;
+
+	std::vector<std::string> ASIs;
+
+	hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, GetCurrentProcessId());
+	if (hModuleSnap == INVALID_HANDLE_VALUE)
+		return ASIs;
+
+	me32.dwSize = sizeof(MODULEENTRY32);
+
+	if (!Module32First(hModuleSnap, &me32))
+		return ASIs;
+
+	do {
+		ASIs.push_back(std::string(me32.szModule));
+	} while (Module32Next(hModuleSnap, &me32));
+
+	CloseHandle(hModuleSnap);
+
+	return ASIs;*/
+
+	WIN32_FIND_DATA w32Data;
+	std::vector<std::string> ASIs;
+	HANDLE hFind = FindFirstFile("*.asi", &w32Data);
+	if (hFind == INVALID_HANDLE_VALUE)
+	{
+		FindClose(hFind);
+		return ASIs;
+	}
+		
+
+	char lpAsiName[MAX_PATH];
+	DWORD chars = GetModuleFileName(hDllModule, lpAsiName, MAX_PATH + 1);
+	std::string szAsiName(lpAsiName);
+	if (chars)
+	{
+		MessageBoxA(nullptr, lpAsiName, "Name", 0);
+	}
+
+	do {
+		std::string szFileName(w32Data.cFileName);
+		if (szAsiName.substr(szAsiName.length() - szFileName.length(), szFileName.length()) != szFileName) // Avoid Myself
+		{
+			ASIs.push_back(szFileName);
+		}
+		
+	} while (FindNextFile(hFind, &w32Data));
+
+	FindClose(hFind);
+	return ASIs;
+
 }
 
 bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)

@@ -19,8 +19,9 @@ void eSettingsManager::Init()
 	iCVD1 = ini.ReadString("Addresses", "iCVD1", "");
 	iCVD2 = ini.ReadString("Addresses", "iCVD2", "");
 	iModLoader = ini.ReadString("Addresses", "iModLoader", "");
+	pTimestop = ini.ReadString("Patterns", "pTimeStop", "8B 51 18 39 51 14");
 	pCam = ini.ReadString("Patterns", "pCam", "0F 11 44 24 30 F2 0F 11 4C 24 40 8B");
-	iCamOffset = ini.ReadString("Addresses", "iCamOffset", "0x6BC");
+	iCamOffset = ini.ReadString("Addresses", "iCamOffset", "0x6BC");	
 
 	// Cheats
 	pMercyAnyTime = ini.ReadString("Patterns.Cheats", "pMercyAnyTime", "");

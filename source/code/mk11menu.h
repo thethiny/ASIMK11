@@ -1,21 +1,28 @@
 #pragma once
 #include "../includes.h"
+#include "mk11.h"
 
 enum eTabs {
-
+	CHEATS = 0,
+	SWAPS,
+	CAMERA,
+	UNLOCKER,
+	ANTICHEAT
 };
+
+extern std::string szTabName[];
 
 
 class MK11Menu {
 private:
-	bool bIsActive;
-	int  iCurrentTab;
+	bool bIsActive = false;
+	eTabs iCurrentTab = eTabs::CAMERA;
 public:
 	void Initialize();
 	void Draw();
 	bool GetActiveState();
 	void ToggleActive();
-	bool operator!() { return bIsActive; }
+	bool operator!() { return !bIsActive; }
 };
 
 extern MK11Menu* GuiMenu;

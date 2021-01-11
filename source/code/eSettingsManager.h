@@ -27,6 +27,7 @@ public:
 
 	// Patterns
 	std::string pCam;
+	std::string pTimestop;
 	// Cheats
 	std::string pMercyAnyTime;
 	std::string pNoGroundReq;

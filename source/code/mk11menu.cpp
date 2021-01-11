@@ -3,8 +3,23 @@
 #include "mk11utils.h"
 #include <iostream>
 #include "..\imgui\imgui.h"
+#include <sstream>
 
 MK11Menu* GuiMenu = new MK11Menu();
+
+typedef ImDrawData* (__stdcall ermaccer_hkPresent)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
+typedef void(__fastcall SetGlobWindow)(HWND window);
+
+ermaccer_hkPresent* ermaccer_function;
+SetGlobWindow* ermaccer_setWindow;
+
+extern std::string szTabName[] = {
+	"Cheats",
+	"Swaps",
+	"Camera",
+	"Unlocker",
+	"AntiCheat"
+};
 
 static void ShowHelpMarker(const char* desc)
 {
@@ -28,6 +43,75 @@ void MK11Menu::Draw()
 {
 	ImGui::GetIO().MouseDrawCursor = true;
 	ImGui::Begin("ASIMK11 by thethiny");
+
+	// Tabs
+
+	if (ImGui::Button("Camera"))
+		iCurrentTab = eTabs::CAMERA;
+	ImGui::SameLine();
+	if (ImGui::Button("Swaps"))
+		iCurrentTab = eTabs::SWAPS;
+	ImGui::SameLine();
+	if (ImGui::Button("Cheats"))
+		iCurrentTab = eTabs::CHEATS;
+	ImGui::SameLine();
+	if (ImGui::Button("Anti Cheat"))
+		iCurrentTab = eTabs::ANTICHEAT;
+	ImGui::SameLine();
+	if (ImGui::Button("Unlocker"))
+		iCurrentTab = eTabs::UNLOCKER;
+	ImGui::Separator();
+
+	if (iCurrentTab == eTabs::CAMERA)
+	{
+		
+		if (sCamStruct.bCamEnabled)
+		{
+			if (sCamStruct.bCamActive)
+			{
+				ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "InActive");
+			}
+		}
+		else
+		{
+			ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Disabled");
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.f), "(Settings)");
+		}
+		
+		
+		ImGui::Separator();
+		ImGui::Checkbox("Freeze XYZ", &sCamStruct.bEnableXYZ);
+		ImGui::InputFloat("X", &sCamStruct.fX, SettingsMgr->fSpeed);
+		ImGui::InputFloat("Y", &sCamStruct.fY, SettingsMgr->fSpeed);
+		ImGui::InputFloat("Z", &sCamStruct.fZ, SettingsMgr->fSpeed);
+
+		ImGui::Checkbox("Freeze POV", &sCamStruct.bEnablePOV);
+		ImGui::InputFloat("POV", &sCamStruct.fPOV, SettingsMgr->fSpeed / 10);
+
+		ImGui::Checkbox("Freeze Pitch/Yaw/Rot", &sCamStruct.bEnablePiYaRot);
+		ImGui::InputInt("Pitch", &sCamStruct.iPitch, SettingsMgr->fSpeed);
+		ImGui::InputInt("Yaw", &sCamStruct.iYaw, SettingsMgr->fSpeed);
+		ImGui::InputInt("Rotation", &sCamStruct.iRot, SettingsMgr->fSpeed);
+
+		ImGui::Checkbox("Timestop", &sCamStruct.bTimestopActive);
+		
+	}
+	else if (iCurrentTab == eTabs::UNLOCKER)
+	{
+		ImGui::TextWrapped("Unlocker Is not working until the game reaches the end of its life cycle.");
+		ImGui::Spacing();
+	}
+	else
+	{
+		ImGui::TextWrapped((szTabName[iCurrentTab] + " not yet implemented.").c_str());
+		ImGui::Spacing();
+	}
+
 
 	/*
 	if (ImGui::Button("Speed Modifier")) iCurrentTab = TAB_SPEED;
@@ -156,9 +240,9 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 			pBackBuffer->Release();
 			oWndProc = (WNDPROC)SetWindowLongPtr(hKieroWindow, GWLP_WNDPROC, (LONG_PTR)WndProc);
 			InitImGui();
+			ermaccer_setWindow(hKieroWindow);
 			bKieroInit = true;
 		}
-
 		else
 		{
 			return oPresent(pSwapChain, SyncInterval, Flags);
@@ -178,14 +262,27 @@ HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT 
 	ImGui::EndFrame();
 
 	ImGui::Render();
+	auto my_DrawData = ImGui::GetDrawData();
+	auto ermaccer_DrawData = ermaccer_function(pSwapChain, SyncInterval, Flags);
 
 	pContext->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-	ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+	ImGui_ImplDX11_RenderDrawData(my_DrawData);
+	if (ermaccer_DrawData != NULL)
+		ImGui_ImplDX11_RenderDrawData(ermaccer_DrawData);
+
 	return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
 DWORD WINAPI MenuGuiMainThread(LPVOID lpReserved)
 {
+	HMODULE ermaccer_hook = AwaitHModule("MK11Hook.asi", 1000); // Change this to be automatic to retreive all ASIs except myself and wait for them.
+	if (ermaccer_hook != NULL) // Hook Exists
+	{
+		ermaccer_function = (ermaccer_hkPresent*)GetProcAddress(ermaccer_hook, "SharedPresent");
+		ermaccer_setWindow = (SetGlobWindow*)GetProcAddress(ermaccer_hook, "SetGlobWindow");
+	}
+
 	bool init_hook = false;
 	printf("ASIMK11::Kiero::Binding\n");
 	do
@@ -195,17 +292,18 @@ DWORD WINAPI MenuGuiMainThread(LPVOID lpReserved)
 		if (status == kiero::Status::Success)
 		{
 			// Wait for Ermaccer's Hook to finish ImGui Patching
-			HMODULE ermaccer_hook = AwaitHModule("MK11Hook.asi", 1000); // Change this to be automatic to retreive all ASIs except myself and wait for them.
-			if (ermaccer_hook != NULL) // Hook Exists
-			{
-				printf("MK11Hook Present! Waiting 1 Second for the hook to finish before init ImGui\n");
-				Sleep(1000); // Sleep 1 second, assuming ermaccer's hook is done
-			}
+			//HMODULE ermaccer_hook = AwaitHModule("MK11Hook.asi", 1000); // Change this to be automatic to retreive all ASIs except myself and wait for them.
+			//if (ermaccer_hook != NULL) // Hook Exists
+			//{
+			//	printf("MK11Hook Present! Waiting 1 Second for the hook to finish before init ImGui\n");
+			//	Sleep(1000); // Sleep 1 second, assuming ermaccer's hook is done
+			//}
 
 			kiero::Status::Enum status = kiero::bind(8, (void**)&oPresent, hkPresent);
 			init_hook = true;
 		}
 	} while (!init_hook);
+
 	printf("ASIMK11::Kiero::Bound\n");
 	return TRUE;
 }
