@@ -25,7 +25,7 @@ uint64_t stoui64h(std::string szString);
 uint64_t* find_pattern(void* handle, std::string_view bytes);
 void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
 template <class CamType>
-void ListenCamHotkey(int VK_btn, CamType* addr, bool inc, double speed = SettingsMgr->fSpeed, float WaitDuration = SettingsMgr->fCamHold) // Eventually Change this Function to allow for Holding Shift by returning char as state. 0 = No, 1 = yes, -1 = shift.
+inline void ListenCamHotkey(int VK_btn, CamType* addr, bool inc, double speed = SettingsMgr->fSpeed, float WaitDuration = SettingsMgr->fCamHold) // Eventually Change this Function to allow for Holding Shift by returning char as state. 0 = No, 1 = yes, -1 = shift.
 {
 	if (GetAsyncKeyState(VK_btn))
 	{

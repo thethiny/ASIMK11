@@ -19,6 +19,7 @@ private:
 	eTabs iCurrentTab = eTabs::CAMERA;
 public:
 	void Initialize();
+	void Color();
 	void Draw();
 	bool GetActiveState();
 	void ToggleActive();

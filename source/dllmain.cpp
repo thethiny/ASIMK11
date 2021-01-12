@@ -139,7 +139,7 @@ uint64_t CamFunction(uint64_t lpCamPtr, uint64_t fValue)
 		*iRot = sCamStruct.iRot;
 	}
 
-	sCamStruct.bCamActive = sCamStruct.bEnablePiYaRot | sCamStruct.bEnablePOV | sCamStruct.bEnableXYZ;
+	sCamStruct.bCamActive = sCamStruct.bEnablePiYaRot | sCamStruct.bEnablePOV | sCamStruct.bEnableXYZ | sCamStruct.bTimestopActive;
 
 	if (sCamStruct.bLogCam)
 	{
@@ -603,7 +603,7 @@ bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
-		CreateThread(nullptr, 0, MenuGuiMainThread, hModule, 0, nullptr);
+		//CreateThread(nullptr, 0, MenuGuiMainThread, hModule, 0, nullptr);
 		OnInitializeHook();
 		break;
 	case DLL_THREAD_ATTACH:
