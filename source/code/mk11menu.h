@@ -28,6 +28,9 @@ public:
 
 extern MK11Menu* GuiMenu;
 
+extern "C" __declspec(dllexport) ImGuiContext * __stdcall SharedPresent(ImGuiContext * ctx);
+extern "C" __declspec(dllexport) ImGuiContext * SharedStyle(ImGuiContext * ctx = 0);
+
 
 // Kiero stuff
 extern Present oPresent;

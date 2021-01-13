@@ -18,6 +18,7 @@ int64 GetGameAddr(__int64 addr);
 int64 GetUser32Addr(__int64 addr);
 int64 GetModuleAddr(__int64 addr, const char* name);
 std::string toLower(std::string s);
+std::string toUpper(std::string s);
 std::string GetProcessName();
 std::string GetDirName();
 HMODULE AwaitHModule(const char* name, uint64_t timeout=0);

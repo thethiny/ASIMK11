@@ -61,6 +61,17 @@ std::string toLower(std::string s)
 	{
 		new_string += std::tolower(s[i]);
 	}
+	return new_string;
+}
+
+std::string toUpper(std::string s)
+{
+	std::string new_string("");
+	for (int i = 0; i < s.length(); i++)
+	{
+		new_string += std::toupper(s[i]);
+	}
+	return new_string;
 }
 
 std::string GetProcessName()

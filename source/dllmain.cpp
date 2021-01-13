@@ -180,6 +180,7 @@ void HooksMain()
 		std::cout << "Found at " << std::hex << hook_address << std::dec << std::endl;
 		Patch(hook_address, 0xC3);
 		Patch(hook_address + 1, 0x90909090);
+		sActiveMods.bAntiCheatEngine = true;
 		std::cout << "Anti Cheat Engine Patched" << std::endl;
 	}
 
@@ -192,6 +193,7 @@ void HooksMain()
 			std::cout << "Patching at " << std::hex << hook_address << std::dec << std::endl;
 			Patch(GetGameAddr(hook_address), (uint16_t)0xC039); // cmp eax, eax
 			Patch(GetGameAddr(hook_address) + 2, (uint16_t)0x9090); // Nop
+			sActiveMods.bAntiCVD1 = true;
 			std::cout << "Anti CVD1 Patched" << std::endl;
 		}
 		else std::cout << "Address Not Specified. Please Add Address to ini file!" << std::endl;
@@ -206,6 +208,7 @@ void HooksMain()
 			uint64_t hook_address = stoui64h(SettingsMgr->iCVD2);
 			std::cout << "Patching at " << std::hex << hook_address << std::dec << std::endl;
 			Patch(GetGameAddr(hook_address), (uint8_t)0xC3); // ret
+			sActiveMods.bAntiCVD2 = true;
 			std::cout << "Anti CVD2 Patched" << std::endl;
 		}
 		else std::cout << "Address Not Specified. Please Add Address to ini file!" << std::endl;
@@ -274,6 +277,26 @@ void HooksMain()
 		else
 		{
 			std::cout << "Couldn't Patch Timestop Function. Timestop Mod Disabled" << std::endl;
+		}
+	}
+
+	if (SettingsMgr->bEnableIntroSwap)
+	{
+		std::cout << "==bEnableIntroSwap==" << std::endl;
+		uint64_t* lpIntroSwap = find_pattern(GetModuleHandleA(NULL), SettingsMgr->pIntroSwap);
+		if (lpIntroSwap != NULL)
+		{
+			uint64_t fix_len_add = (uint64_t)lpIntroSwap;
+			Patch<uint16_t>(fix_len_add, 0x428d); // lea eax, [rdx+
+			Patch<uint8_t>(fix_len_add + 2, 0x2A); // 0x2A]
+			uint64_t hook_address = fix_len_add + 0x35;
+			InjectHook(hook_address, game_tramp->Jump(MK11Hooks::IntroSwap), PATCH_CALL);
+			sActiveMods.bIntroSwap = true;
+			std::cout << "Patched Anims Loader" << std::endl;
+		}
+		else
+		{
+			std::cout << "Couldn't find pattern. Intro Swap Mod Disabled" << std::endl;
 		}
 	}
 

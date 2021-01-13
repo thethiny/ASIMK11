@@ -18,6 +18,7 @@ public:
 	bool bModLoader;
 	bool bEnableCameraMod;
 	bool bEnableCheats;
+	bool bEnableIntroSwap;
 
 	// Addresses
 	std::string iCVD1;
@@ -28,6 +29,7 @@ public:
 	// Patterns
 	std::string pCam;
 	std::string pTimestop;
+	std::string pIntroSwap;
 	// Cheats
 	std::string pMercyAnyTime;
 	std::string pNoGroundReq;

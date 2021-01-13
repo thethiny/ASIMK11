@@ -31,13 +31,31 @@ namespace MK11 {
 		uint32_t uCamSpeed = 5;
 	};
 
+	struct IntroStruct {
+		char PName[100] = { 0 }, PName2[100] = { 0 };
+		char PChar[2] = { 0 }, PChar2[2]{ 0 };
+		bool bEnabled = false;
+	};
+
+	extern const char* szCharacters[];
+	//extern char szCharacterSelected[];
+
+	struct ActiveMods {
+		bool bIntroSwap = false;
+		bool bAntiCheatEngine = false;
+		bool bAntiCVD1 = false;
+		bool bAntiCVD2 = false;
+	};
+
 }
 
 extern MK11::CamStruct sCamStruct;
+extern MK11::IntroStruct sIntroStruct, sIntroStruct2;
+extern MK11::ActiveMods sActiveMods;
 
 
 namespace MK11Hooks {
-
+	void IntroSwap(char* dest, char* source, uint64_t length);
 }
 
 

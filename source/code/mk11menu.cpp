@@ -42,6 +42,365 @@ void MK11Menu::Initialize()
 void MK11Menu::Color()
 {
 
+}
+
+void MK11Menu::Draw()
+{
+	//Color();
+	SharedStyle();
+
+	ImGui::GetIO().MouseDrawCursor = true;
+	//ImGui::Begin("ASIMK11 by thethiny");
+
+	// Tabs
+
+	if (ImGui::Button("Camera"))
+		iCurrentTab = eTabs::CAMERA;
+	ImGui::SameLine();
+	if (ImGui::Button("Swaps"))
+		iCurrentTab = eTabs::SWAPS;
+	ImGui::SameLine();
+	if (ImGui::Button("Cheats"))
+		iCurrentTab = eTabs::CHEATS;
+	ImGui::SameLine();
+	if (ImGui::Button("Anti Cheat"))
+		iCurrentTab = eTabs::ANTICHEAT;
+	ImGui::SameLine();
+	if (ImGui::Button("Unlocker"))
+		iCurrentTab = eTabs::UNLOCKER;
+	ImGui::Separator();
+
+	if (iCurrentTab == eTabs::CAMERA)
+	{
+
+		if (sCamStruct.bCamEnabled)
+		{
+			if (sCamStruct.bCamActive)
+			{
+				ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "InActive");
+			}
+
+			ImGui::Separator();
+			ImGui::Checkbox("Freeze XYZ", &sCamStruct.bEnableXYZ);
+			ImGui::InputFloat("X", &sCamStruct.fX, SettingsMgr->fSpeed);
+			ImGui::InputFloat("Y", &sCamStruct.fY, SettingsMgr->fSpeed);
+			ImGui::InputFloat("Z", &sCamStruct.fZ, SettingsMgr->fSpeed);
+
+			ImGui::Checkbox("Freeze POV", &sCamStruct.bEnablePOV);
+			ImGui::InputFloat("POV", &sCamStruct.fPOV, SettingsMgr->fSpeed / 10);
+
+			ImGui::Checkbox("Freeze Pitch/Yaw/Rot", &sCamStruct.bEnablePiYaRot);
+			ImGui::InputInt("Pitch", &sCamStruct.iPitch, SettingsMgr->fSpeed);
+			ImGui::InputInt("Yaw", &sCamStruct.iYaw, SettingsMgr->fSpeed);
+			ImGui::InputInt("Rotation", &sCamStruct.iRot, SettingsMgr->fSpeed);
+		}
+		else
+		{
+			ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Disabled");
+			ImGui::SameLine();
+			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.f), "(Settings)");
+		}
+
+		ImGui::Separator();
+		ImGui::Checkbox("Timestop", &sCamStruct.bTimestopActive);
+
+	}
+	else if (iCurrentTab == eTabs::UNLOCKER)
+	{
+		ImGui::TextWrapped("Unlocker Is not working until the game reaches the end of its life cycle.");
+		ImGui::Spacing();
+	}
+	else if (iCurrentTab == eTabs::SWAPS)
+	{
+		ImGui::Text("Status:");
+		ImGui::SameLine();
+		if (!sActiveMods.bIntroSwap)
+		{
+			if (SettingsMgr->bEnableIntroSwap)
+			{
+				ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Disabled");
+				ImGui::SameLine();
+				ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.f), "(Error)");
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Disabled");
+				ImGui::SameLine();
+				ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.f), "(Settings)");
+			}
+		}
+		else
+		{
+			//ImGui::TextColored(ImVec4(1.f, .6f, 0.f, 1.f), "InActive");
+			ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Enabled");
+			ImGui::Text("P1 -");
+			ImGui::SameLine();
+			if (sIntroStruct.bEnabled)
+			{
+				if (sIntroStruct.PName[0] && sIntroStruct.PChar[0] && sIntroStruct.PName2[0] && sIntroStruct.PChar2[0])
+				{
+					ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Missing");
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.f, .6f, 0.f, 1.f), "InActive");
+			}
+			ImGui::SameLine();
+			ImGui::Text("- P2 -");
+			ImGui::SameLine();
+			if (sIntroStruct2.bEnabled)
+			{
+				if (sIntroStruct2.PName[0] && sIntroStruct2.PChar[0] && sIntroStruct2.PName2[0] && sIntroStruct2.PChar2[0])
+				{
+					ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Missing");
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.f, .6f, 0.f, 1.f), "InActive");
+			}
+			ImGui::Separator();
+
+		}
+		if (sActiveMods.bIntroSwap)
+		{
+			ImGui::Checkbox("Swap P1", &sIntroStruct.bEnabled);
+
+			ImGui::PushItemWidth(200);
+			if (ImGui::BeginCombo("Char1", sIntroStruct.PName))
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					bool is_selected = (sIntroStruct.PName == MK11::szCharacters[i]);
+					if (ImGui::Selectable(MK11::szCharacters[i], is_selected))
+					{
+						sprintf(sIntroStruct.PName, toUpper(MK11::szCharacters[i]).c_str());
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+			ImGui::SameLine();
+			ImGui::PushItemWidth(40);
+			if (ImGui::BeginCombo("Ltr1", sIntroStruct.PChar))
+			{
+
+				for (int j = 0; j < 5; j++)
+				{
+					char t[2] = { 'A' + j };
+					bool is_selected = (sIntroStruct.PChar == t);
+					if (ImGui::Selectable(t, is_selected))
+					{
+						sprintf(sIntroStruct.PChar, t);
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+
+			ImGui::PushItemWidth(200);
+			if (ImGui::BeginCombo("sChar1", sIntroStruct.PName2))
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					bool is_selected = (sIntroStruct.PName2 == MK11::szCharacters[i]);
+					if (ImGui::Selectable(MK11::szCharacters[i], is_selected))
+					{
+						sprintf(sIntroStruct.PName2, toUpper(MK11::szCharacters[i]).c_str());
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+			ImGui::SameLine();
+			ImGui::PushItemWidth(40);
+			if (ImGui::BeginCombo("sLtr1", sIntroStruct.PChar2))
+			{
+
+				for (int j = 0; j < 5; j++)
+				{
+					char t[2] = { 'A' + j };
+					bool is_selected = (sIntroStruct.PChar2 == t);
+					if (ImGui::Selectable(t, is_selected))
+					{
+						sprintf(sIntroStruct.PChar2, t);
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+
+			///////////////////////
+			ImGui::Checkbox("Swap P2", &sIntroStruct2.bEnabled);
+			ImGui::SameLine();
+			if (ImGui::Button("Mirror Swap"))
+			{
+				sprintf(sIntroStruct2.PName, sIntroStruct.PName2);
+				sprintf(sIntroStruct2.PName2, sIntroStruct.PName);
+				sprintf(sIntroStruct2.PChar, sIntroStruct.PChar);
+				sprintf(sIntroStruct2.PChar2, sIntroStruct.PChar2);
+
+			}
+
+			ImGui::PushItemWidth(200);
+			if (ImGui::BeginCombo("Char2", sIntroStruct2.PName))
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					bool is_selected = (sIntroStruct2.PName == MK11::szCharacters[i]);
+					if (ImGui::Selectable(MK11::szCharacters[i], is_selected))
+					{
+						sprintf(sIntroStruct2.PName, toUpper(MK11::szCharacters[i]).c_str());
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+			ImGui::SameLine();
+			ImGui::PushItemWidth(40);
+			if (ImGui::BeginCombo("Ltr2", sIntroStruct2.PChar))
+			{
+
+				for (int j = 0; j < 5; j++)
+				{
+					char t[2] = { 'A' + j };
+					bool is_selected = (sIntroStruct2.PChar == t);
+					if (ImGui::Selectable(t, is_selected))
+					{
+						sprintf(sIntroStruct2.PChar, t);
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+
+			ImGui::PushItemWidth(200);
+			if (ImGui::BeginCombo("sChar2", sIntroStruct2.PName2))
+			{
+				for (int i = 0; i < 5; i++)
+				{
+					bool is_selected = (sIntroStruct2.PName2 == MK11::szCharacters[i]);
+					if (ImGui::Selectable(MK11::szCharacters[i], is_selected))
+					{
+						sprintf(sIntroStruct2.PName2, toUpper(MK11::szCharacters[i]).c_str());
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+			ImGui::SameLine();
+			ImGui::PushItemWidth(40);
+			if (ImGui::BeginCombo("sLtr2", sIntroStruct2.PChar2))
+			{
+
+				for (int j = 0; j < 5; j++)
+				{
+					char t[2] = { 'A' + j };
+					bool is_selected = (sIntroStruct2.PChar2 == t);
+					if (ImGui::Selectable(t, is_selected))
+					{
+						sprintf(sIntroStruct2.PChar2, t);
+					}
+					if (is_selected)
+						ImGui::SetItemDefaultFocus();
+				}
+				ImGui::EndCombo();
+			}
+			ImGui::PopItemWidth();
+		}
+		
+	}
+	else if (iCurrentTab == eTabs::ANTICHEAT)
+	{
+		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+		ImGui::Checkbox("Cheat Engine Detection", &sActiveMods.bAntiCheatEngine);
+		ImGui::Checkbox("Content Validation Check 1 (exe)", &sActiveMods.bAntiCVD1);
+		ImGui::Checkbox("Content Validation Check 2 (ContentValidationData.txt)", &sActiveMods.bAntiCVD2);
+		ImGui::PopItemFlag();
+	}
+	else
+	{
+		ImGui::TextWrapped((szTabName[iCurrentTab] + " not yet implemented.").c_str());
+		ImGui::Spacing();
+	}
+
+}
+
+
+bool MK11Menu::GetActiveState()
+{
+	return bIsActive;
+}
+
+void MK11Menu::ToggleActive()
+{
+	bIsActive = !bIsActive;
+}
+
+
+// Kiero ImGui Stuff
+
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+Present oPresent;
+HWND hKieroWindow = NULL;
+WNDPROC oWndProc;
+ID3D11Device* pDevice = NULL;
+ID3D11DeviceContext* pContext = NULL;
+ID3D11RenderTargetView* mainRenderTargetView;
+bool bKieroInit = false;
+
+void InitImGui()
+{
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO();
+	io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
+	ImGui_ImplWin32_Init(hKieroWindow);
+	ImGui_ImplDX11_Init(pDevice, pContext);
+}
+
+LRESULT __stdcall WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+
+	if (true && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+		return true;
+
+	return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
+}
+
+ImGuiContext* SharedStyle(ImGuiContext* ctx)
+{
+	if (ctx)
+		ImGui::SetCurrentContext(ctx);
+
+	//Style
 	ImGuiStyle* style = &ImGui::GetStyle();
 	ImVec4* colors = style->Colors;
 
@@ -93,205 +452,17 @@ void MK11Menu::Color()
 	colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
 	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+
+
+	return ImGui::GetCurrentContext();
 }
 
-void MK11Menu::Draw()
-{
-	Color();
-
-	ImGui::GetIO().MouseDrawCursor = true;
-	//ImGui::Begin("ASIMK11 by thethiny");
-
-	// Tabs
-
-	if (ImGui::Button("Camera"))
-		iCurrentTab = eTabs::CAMERA;
-	ImGui::SameLine();
-	if (ImGui::Button("Swaps"))
-		iCurrentTab = eTabs::SWAPS;
-	ImGui::SameLine();
-	if (ImGui::Button("Cheats"))
-		iCurrentTab = eTabs::CHEATS;
-	ImGui::SameLine();
-	if (ImGui::Button("Anti Cheat"))
-		iCurrentTab = eTabs::ANTICHEAT;
-	ImGui::SameLine();
-	if (ImGui::Button("Unlocker"))
-		iCurrentTab = eTabs::UNLOCKER;
-	ImGui::Separator();
-
-	if (iCurrentTab == eTabs::CAMERA)
-	{
-		
-		if (sCamStruct.bCamEnabled)
-		{
-			if (sCamStruct.bCamActive)
-			{
-				ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
-			}
-			else
-			{
-				ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "InActive");
-			}
-		}
-		else
-		{
-			ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Disabled");
-			ImGui::SameLine();
-			ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.f), "(Settings)");
-		}
-		
-		
-		ImGui::Separator();
-		ImGui::Checkbox("Freeze XYZ", &sCamStruct.bEnableXYZ);
-		ImGui::InputFloat("X", &sCamStruct.fX, SettingsMgr->fSpeed);
-		ImGui::InputFloat("Y", &sCamStruct.fY, SettingsMgr->fSpeed);
-		ImGui::InputFloat("Z", &sCamStruct.fZ, SettingsMgr->fSpeed);
-
-		ImGui::Checkbox("Freeze POV", &sCamStruct.bEnablePOV);
-		ImGui::InputFloat("POV", &sCamStruct.fPOV, SettingsMgr->fSpeed / 10);
-
-		ImGui::Checkbox("Freeze Pitch/Yaw/Rot", &sCamStruct.bEnablePiYaRot);
-		ImGui::InputInt("Pitch", &sCamStruct.iPitch, SettingsMgr->fSpeed);
-		ImGui::InputInt("Yaw", &sCamStruct.iYaw, SettingsMgr->fSpeed);
-		ImGui::InputInt("Rotation", &sCamStruct.iRot, SettingsMgr->fSpeed);
-
-		ImGui::Checkbox("Timestop", &sCamStruct.bTimestopActive);
-		
-	}
-	else if (iCurrentTab == eTabs::UNLOCKER)
-	{
-		ImGui::TextWrapped("Unlocker Is not working until the game reaches the end of its life cycle.");
-		ImGui::Spacing();
-	}
-	else
-	{
-		ImGui::TextWrapped((szTabName[iCurrentTab] + " not yet implemented.").c_str());
-		ImGui::Spacing();
-	}
-
-
-	/*
-	if (ImGui::Button("Speed Modifier")) iCurrentTab = TAB_SPEED;
-	ImGui::SameLine();
-	if (ImGui::Button("Player Control")) iCurrentTab = TAB_PLAYER_CONTROL;
-	ImGui::SameLine();
-	if (ImGui::Button("Camera Control")) iCurrentTab = TAB_CAMERA;
-	ImGui::Separator();
-
-	if (iCurrentTab == TAB_SPEED)
-	{
-		ImGui::Text("Gamespeed Control");
-		ImGui::InputFloat("", &fSlowMotionSpeed, 0.1);
-
-		if (fSlowMotionSpeed > 2.0f) fSlowMotionSpeed = 2.0f;
-		if (fSlowMotionSpeed < 0.0f) fSlowMotionSpeed = 0.0f;
-		ImGui::Checkbox("Enable", &bSlowMotionEnabled);
-	}
-	if (iCurrentTab == TAB_CAMERA)
-	{
-		ImGui::Checkbox("Custom Camera Position", &bCustomCamera);
-		ImGui::InputFloat3("X | Y | Z", &camPos.X);
-		ImGui::Checkbox("Custom Camera Rotation", &bCustomCameraRot);
-		ImGui::InputInt3("Pitch | Yaw | Roll", &camRot.Pitch);
-		ImGui::Checkbox("Enable Freecam", &bFreeCameraMovement);
-		ImGui::SameLine(); ShowHelpMarker("Requires both toggles enabled!\n You can configure keys in .ini file.");
-		ImGui::InputFloat("Freecam Speed", &fFreeCameraSpeed);
-		ImGui::InputInt("Freecam Rotation Speed", &iFreeCameraRotSpeed);
-
-
-		ImGui::Separator();
-
-		ImGui::Checkbox("Custom Cameras", &bEnableCustomCameras);
-
-		if (ImGui::BeginCombo("Mode", szCurrentCameraOption))
-		{
-			for (int n = 0; n < IM_ARRAYSIZE(szCameraModes); n++)
-			{
-				bool is_selected = (szCurrentCameraOption == szCameraModes[n]);
-				if (ImGui::Selectable(szCameraModes[n], is_selected))
-					sprintf(szCurrentCameraOption, szCameraModes[n]);
-				if (is_selected)
-					ImGui::SetItemDefaultFocus();
-
-			}
-			ImGui::EndCombo();
-		}
-		iCurrentCustomCamera = GetCamMode(szCurrentCameraOption);
-		ImGui::InputFloat("FPS Camera Offset", &fAdjustCam);
-		ImGui::InputFloat("FPS Up/Down Offset", &fAdjustCamZ);
-		ImGui::InputFloat("FPS Left/Right Offset", &fAdjustCamX);
-	}
-	if (iCurrentTab == TAB_PLAYER_CONTROL)
-	{
-		ImGui::Text("Position");
-		ImGui::SameLine(); ShowHelpMarker("Preview only!");
-		if (MK11::GetCharacterObject(PLAYER1))
-		{
-			MK11::GetCharacterPosition(&plrPos, PLAYER1);
-			ImGui::InputFloat3("X | Y | Z", &plrPos.X);
-		}
-		if (MK11::GetCharacterObject(PLAYER2))
-		{
-			MK11::GetCharacterPosition(&plrPos2, PLAYER2);
-			ImGui::InputFloat3("X | Y | Z", &plrPos2.X);
-		}
-
-	}*/
-}
-
-
-bool MK11Menu::GetActiveState()
-{
-	return bIsActive;
-}
-
-void MK11Menu::ToggleActive()
-{
-	bIsActive = !bIsActive;
-}
-
-
-// Kiero ImGui Stuff
-
-extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-
-Present oPresent;
-HWND hKieroWindow = NULL;
-WNDPROC oWndProc;
-ID3D11Device* pDevice = NULL;
-ID3D11DeviceContext* pContext = NULL;
-ID3D11RenderTargetView* mainRenderTargetView;
-bool bKieroInit = false;
-
-void InitImGui()
-{
-	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO();
-	io.ConfigFlags = ImGuiConfigFlags_NoMouseCursorChange;
-	ImGui_ImplWin32_Init(hKieroWindow);
-	ImGui_ImplDX11_Init(pDevice, pContext);
-}
-
-LRESULT __stdcall WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-
-	if (true && ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
-		return true;
-
-	return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
-}
-
-//extern "C" __declspec(dllexport) void __fastcall SetGlobWindow(HWND window)
-//{
-//	::hKieroWindow = window;
-//}
-
-extern "C" __declspec(dllexport) ImGuiContext * __stdcall SharedPresent(ImGuiContext* ctx)
+ImGuiContext * __stdcall SharedPresent(ImGuiContext* ctx)
 {
 	ImGui::SetCurrentContext(ctx);
 
 	GuiMenu->Draw();
+
 	return ImGui::GetCurrentContext();
 
 }
