@@ -68,7 +68,7 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -100,7 +100,6 @@
     <ClInclude Include="code\mk11.h" />
     <ClInclude Include="code\mk11menu.h" />
     <ClInclude Include="code\mk11utils.h" />
-    <ClInclude Include="code\mk11hook.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="imgui\imconfig.h" />
     <ClInclude Include="imgui\imgui.h" />
@@ -121,6 +120,7 @@
     <ClInclude Include="kiero\minhook\src\hde\table64.h" />
     <ClInclude Include="kiero\minhook\src\trampoline.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="utils\cppython.h" />
     <ClInclude Include="utils\HookInit.hpp" />
     <ClInclude Include="utils\MemoryMgr.h" />
     <ClInclude Include="utils\Patterns.h" />
@@ -131,7 +131,6 @@
     <ClCompile Include="code\mk11.cpp" />
     <ClCompile Include="code\mk11menu.cpp" />
     <ClCompile Include="code\mk11utils.cpp" />
-    <ClCompile Include="code\mk11hook.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="HookInit.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -151,6 +150,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="utils\cppython.cpp" />
     <ClCompile Include="utils\Patterns.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

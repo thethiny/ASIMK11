@@ -114,8 +114,8 @@
     <ClInclude Include="code\mk11utils.h">
       <Filter>Header Files\code</Filter>
     </ClInclude>
-    <ClInclude Include="code\mk11hook.h">
-      <Filter>Header Files\code</Filter>
+    <ClInclude Include="utils\cppython.h">
+      <Filter>Header Files\utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -182,8 +182,8 @@
     <ClCompile Include="code\mk11utils.cpp">
       <Filter>Header Files\code</Filter>
     </ClCompile>
-    <ClCompile Include="code\mk11hook.cpp">
-      <Filter>Header Files\code</Filter>
+    <ClCompile Include="utils\cppython.cpp">
+      <Filter>Header Files\utils</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
