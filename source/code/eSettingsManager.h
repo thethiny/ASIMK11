@@ -12,74 +12,54 @@ public:
 	bool bEnableConsoleWindow;
 	bool bPauseOnStart;
 	bool bDisableAntiCheatEngine;
-	bool bDisableAntiCVD1;
-	bool bDisableAntiCVD2;
+	bool bDisableAntiCVD;
 	bool bPatchUnlocker;
 	bool bModLoader;
 	bool bEnableCameraMod;
 	bool bEnableCheats;
 	bool bEnableIntroSwap;
+	bool bEnableTimeStop;
 
 	// Addresses
-	std::string iCVD1;
-	std::string iCVD2;
-	std::string iModLoader;
-	std::string iCamOffset;
 
 	// Patterns
+	std::string pGameVerFull;
+	std::string pGameVer;
 	std::string pCam;
 	std::string pTimestop;
 	std::string pIntroSwap;
+	std::string pCVD1;
+	std::string pCVD2;
 	// Cheats
 	std::string pMercyAnyTime;
 	std::string pNoGroundReq;
 	std::string pNoBrutalityReq;
 	std::string pBrutalityAlwaysCorrect;
 	std::string pMeteorAlwaysSpawns;
+	std::string pFatalityAlwaysAvailable;
+	std::string pDizzyAlwaysAvailable;
+	std::string pComboInFatality;
+	std::string pBlockingDisabled;
+	std::string pFatalBlowAtMaxHealth;
 
-	std::string hotkey_cheats;
+	std::string hkCheats;
 	int iVKCheats;
 
-	/// Camera Mod Section
-	std::string hotkey_toggle_camera;
-	std::string hotkey_xp;
-	std::string hotkey_xm;
-	std::string hotkey_yp;
-	std::string hotkey_ym;
-	std::string hotkey_zp;
-	std::string hotkey_zm;
-	std::string hotkey_fovp;
-	std::string hotkey_fovm;
-	std::string hotkey_rotp;
-	std::string hotkey_rotm;
-	std::string hotkey_pitchp;
-	std::string hotkey_pitchm;
-	std::string hotkey_yawp;
-	std::string hotkey_yawm;
-	std::string hotkey_timestop;
-	int iVKCamToggle;
-	int iVKxp;
-	int iVKxm;
-	int iVKyp;
-	int iVKym;
-	int iVKzp;
-	int iVKzm;
-	int iVKfovp;
-	int iVKfovm;
-	int iVKrotp;
-	int iVKrotm;
-	int iVKpitchp;
-	int iVKpitchm;
-	int iVKyawp;
-	int iVKyawm;
+	std::string hkTimestop;
 	int iVKtimestop;
-	float fSpeed;
-	float fCamHold;
-	/// End of Cam Mod Section
 
 	// Menu Section
-	std::string hotkey_toggle_menu;
+	std::string hkMenu;
+	std::string hkInfo;
 	int iVKMenuToggle;
+	int iVKMenuInfo;
+
+	//Other
+	int iLogSize;
+	bool FORCE_CHECK_VER = true;
+	std::string szGameVer;
+	std::string szModLoader;
+	std::string szAntiCheatEngine;
 
 };
 
