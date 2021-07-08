@@ -3,10 +3,13 @@
 #include "code/mk11.h"
 #include <tlhelp32.h> 
 
+#define MKPIPE TEXT("\\\\.\\pipe\\MK11Unlocker")
+
 using namespace Memory::VP;
 using namespace hook;
 
-#define MKPIPE TEXT("\\\\.\\pipe\\MK11Unlocker")
+LibMap IAT{};
+Trampoline* GameTramp, * User32Tramp;
 
 void UnlockerPipe();
 void BlockerEvents();
@@ -235,8 +238,6 @@ void CreateConsole(bool bFreeze = false)
 	printf("ESettingsManager::bEnableConsoleWindow = true\n");
 }
 
-Trampoline* GameTramp, * User32Tramp;
-
 void HooksMain()
 {
 	
@@ -374,7 +375,7 @@ void PreGameHooks()
 
 		if (SettingsMgr->bModLoader)
 		{
-			ParsePEHeader();
+			IAT = ParsePEHeader();
 			std::cout << "==bModLoader==" << std::endl;
 			uint64_t CreateFileW = IAT["kernel32.dll"]["CreateFileW"];
 			if (!CreateFileW)
@@ -467,7 +468,6 @@ void PreGameHooks()
 
 	}
 }
-
 
 void UnlockerPipe()
 {

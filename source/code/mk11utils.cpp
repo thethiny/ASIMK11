@@ -5,8 +5,6 @@
 using namespace Memory::VP;
 using namespace hook;
 
-extern std::map<std::string, FuncMap> IAT{};
-
 // Address Utilities
 
 int64 GetGameEntryPoint()
@@ -29,9 +27,10 @@ int64 GetModuleEntryPoint(const char* name)
 
 int64 GetGameAddr(__int64 addr)
 {
-	if (addr > GetGameEntryPoint())
+	int64 Entry = GetGameEntryPoint();
+	if (addr > Entry)
 		return addr;
-	return GetGameEntryPoint() + addr;
+	return Entry + addr;
 }
 
 int64 GetUser32Addr(__int64 addr)
@@ -164,12 +163,14 @@ void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern
 	}
 }
 
-void ParsePEHeader()
+LibMap ParsePEHeader()
 {
 	PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)GetModuleHandleA(NULL);
 	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)RVAtoLP((PBYTE)pDosHeader, pDosHeader->e_lfanew);
 	if (pNTHeader->Signature != IMAGE_NT_SIGNATURE)
 		throw(-1);
+
+	std::map<std::string, FuncMap> IAT{};
 
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)RVAtoLP(pDosHeader, pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
 
@@ -196,5 +197,7 @@ void ParsePEHeader()
 		}
 		IAT[szLibrary] = FunctionsMap;
 	}
+
+	return IAT;
 
 }

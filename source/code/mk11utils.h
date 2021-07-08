@@ -14,6 +14,9 @@ typedef __int64 int64;
 
 #define RVAtoLP( base, offset ) ((PBYTE)base + offset)
 
+typedef std::map<std::string, ULONGLONG> FuncMap;
+typedef std::map<std::string, FuncMap> LibMap;
+
 int64 GetGameEntryPoint();
 int64 GetUser32EntryPoint();
 int64 GetModuleEntryPoint(const char* name);
@@ -29,9 +32,8 @@ HMODULE AwaitHModule(const char* name, uint64_t timeout=0);
 uint64_t stoui64h(std::string szString);
 uint64_t* FindPattern(void* handle, std::string_view bytes);
 void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
-void ParsePEHeader();
-typedef std::map<std::string, ULONGLONG> FuncMap;
-extern std::map<std::string, FuncMap> IAT;
+LibMap ParsePEHeader();
+
 
 template<typename T>
 std::string HexToString(T Value)
