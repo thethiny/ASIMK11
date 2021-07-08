@@ -9,10 +9,211 @@ using namespace hook;
 #define MKPIPE TEXT("\\\\.\\pipe\\MK11Unlocker")
 
 void UnlockerPipe();
-void CamListener();
+void BlockerEvents();
 void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
-std::vector<std::string> FindASIs();
 
+LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
+{
+	bool state = lParam >> 31, transition = lParam & 0x40000000;
+	auto RepeatCount = LOWORD(lParam);
+
+
+	if (code >= 0 && !state) // State 0 -> Down
+	{
+		if (!transition) // Transition 0 -> Being Pressed (PosEdge), 1 -> Being Held.
+		{
+			if (wParam == SettingsMgr->iVKMenuToggle)
+			{
+				GuiMenu->ToggleActive();
+			}
+
+			if (sCamStruct.bTimestopEnabled && wParam == (SettingsMgr->iVKtimestop))
+			{
+				sCamStruct.bTimestopActive = !sCamStruct.bTimestopActive;
+				if (sCamStruct.bTimestopActive)
+				{
+					std::cout << "TimeStop::On" << std::endl;
+				}
+				else
+				{
+					std::cout << "TimeStop::Off" << std::endl;
+				}
+
+			}
+
+			if (SettingsMgr->bPatchUnlocker && wParam == (VK_F10))
+			{
+				uint64_t res;
+				MK11Hooks::VR2Proxy(0, &res, "thethiny");
+				char* hash = (char*)res;
+				printf("Output: %X (%s)\n", res, hash);
+			}
+
+			// Cheats
+			if (SettingsMgr->bEnableCheats)
+			{
+				if (GetAsyncKeyState(SettingsMgr->iVKCheats)) // Button Down
+				{
+					if (wParam == '1' && sCheatsStruct.lpMercy)
+					{
+						std::cout << "pMercyAnyTime ";
+						if (sCheatsStruct.bMercy)
+						{
+							std::cout << "Disabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMercy), 0x5340); // push rbx // Change this to read it automatically from memory, or verify against a hash or something
+							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpMercy) + 2), 0x48);
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMercy), 0x01B0); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpMercy) + 2), 0xC3);
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bMercy = !sCheatsStruct.bMercy;
+					}
+					if (wParam == '2' && sCheatsStruct.lpGround)
+					{
+						std::cout << "pNoGroundReq ";
+						if (sCheatsStruct.bGround)
+						{
+							std::cout << "Disabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpGround), 0x5340); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpGround) + 2), 0x48);
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpGround), 0x01B0); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpGround) + 2), 0xC3);
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bGround = !sCheatsStruct.bGround;
+					}
+					if (wParam == '3' && sCheatsStruct.lpBrut)
+					{
+						std::cout << "pNoBrutalityReq ";
+						if (sCheatsStruct.bBrut)
+						{
+							std::cout << "Disabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrut), 0x8948);
+							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrut) + 2), 0x6C);
+							if (sCheatsStruct.lpBrutB)
+							{
+								Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrutB), 0x5340);
+								Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrutB) + 2), 0x48);
+							}
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrut), 0x01B0); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrut) + 2), 0xC3);
+							if (sCheatsStruct.lpBrutB)
+							{
+								Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrutB), 0x01B0); // mov al, 1
+								Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrutB) + 2), 0xC3);
+							}
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bBrut = !sCheatsStruct.bBrut;
+					}
+					if (wParam == '4' && sCheatsStruct.lpMeteor)
+					{
+						std::cout << "pMeteorAlwaysSpawns ";
+						if (sCheatsStruct.bMeteor)
+						{
+							std::cout << "Disabled";
+							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMeteor), 0x1C75); // jne +1E
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Nop(GetGameAddr((uint64_t)sCheatsStruct.lpMeteor), 2);
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bMeteor = !sCheatsStruct.bMeteor;
+					}
+					if (wParam == '5' && sCheatsStruct.lpDizzy && sCheatsStruct.lpFatality)
+					{
+						std::cout << "pFatalityAlwaysAvailable ";
+						if (sCheatsStruct.bDizzy)
+						{
+							std::cout << "Disabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpDizzy), 0x24748948); // mov [rsp+10],rsi
+							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpDizzy) + 4), 0x48571024); // push rdi / sub rsp, 20
+
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpDizzy), 0x83485340);
+							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpDizzy) + 4), 0x8B4820EC);
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpDizzy), 0x1C0C748); // mov rax, 1
+							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpDizzy) + 4), 0xC3000000); // ret
+
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatality), 0x1C0C748);
+							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpFatality) + 4), 0xC3000000);
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bFatality = sCheatsStruct.bDizzy = !sCheatsStruct.bDizzy;
+					}
+					if (wParam == '6' && sCheatsStruct.lpFatCombo)
+					{
+						std::cout << "pComboInFatality ";
+						if (sCheatsStruct.bFatCombo)
+						{
+							std::cout << "Disabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatCombo), 0x28EC8348);
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatCombo), 0xC3C03148); // xor rax, rax / ret
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bFatCombo = !sCheatsStruct.bFatCombo;
+					}
+					if (wParam == '7' && sCheatsStruct.lpNoBlock)
+					{
+						std::cout << "pBlockingDisabled ";
+						if (sCheatsStruct.bNoBlock)
+						{
+							std::cout << "Disabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpNoBlock), 0x245C8948);
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpNoBlock), 0xC3C03148); // xor rax, rax / ret
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bNoBlock = !sCheatsStruct.bNoBlock;
+					}
+					if (wParam == '8' && sCheatsStruct.lpFatalBlow)
+					{
+						std::cout << "pFatalBlowAtMaxHealth ";
+						if (sCheatsStruct.bFatalBlow)
+						{
+							std::cout << "Disabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatalBlow), 0xA9058B48);
+							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpFatalBlow) + 4), 0x8302ED78);
+						}
+						else
+						{
+							std::cout << "Enabled";
+							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatalBlow), 0x1C0C748); // mov rax, 1
+							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpFatalBlow) + 4), 0xC3000000); // ret
+						}
+						std::cout << std::endl;
+						sCheatsStruct.bFatalBlow = !sCheatsStruct.bFatalBlow;
+					}
+				}
+			}
+		}
+	}
+	return CallNextHookEx(0, code, wParam, lParam);
+}
 
 void CreateConsole(bool bFreeze = false)
 {
@@ -34,245 +235,30 @@ void CreateConsole(bool bFreeze = false)
 	printf("ESettingsManager::bEnableConsoleWindow = true\n");
 }
 
-typedef uint64_t* (__fastcall vr2_function)(uint64_t seed, uint64_t* result_hash, const char* to_hash);
-vr2_function* vr2_game_function = (vr2_function*)(GetGameAddr(0x3D9F760));
-uint64_t vr_thisptr = NULL;
-
-uint64_t* __fastcall vr2_proxy_function(uint64_t seed, uint64_t* result_hash, const char* to_hash)
-{
-	printf("seed: %X\n", seed);
-	printf("result_hash: %X\n", result_hash);
-	printf("to_hash: %X (%s)\n", to_hash, to_hash);
-
-	uint64_t* return_value = vr2_game_function(0, result_hash, to_hash);
-	printf("hash: %X (%s)\n", return_value, (char*)*return_value);
-
-	return return_value;
-}
-
-
-HANDLE __stdcall CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
-{
-	wchar_t* wcFileName = (wchar_t*)lpFileName;
-	std::wstring fileName(wcFileName, wcslen(wcFileName));
-	if (!wcsncmp(wcFileName, L"..", 2))
-	{
-		std::wstring wsSwapFolder = L"MKSwap";
-		std::wstring newFileName = L"..\\" + wsSwapFolder + fileName.substr(2, fileName.length() - 2);
-		if (std::filesystem::exists(newFileName.c_str()))
-		{
-			wprintf(L"Loading %s from %s\n", wcFileName, wsSwapFolder.c_str());
-			return CreateFileW(newFileName.c_str(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);;
-		}
-	}
-	return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-}
-
-
-
-uint64_t lpCamFunction;
-uint64_t lpCaughtCamPtr = NULL;
-uint32_t CamOffset = NULL;
-
-struct CheatsStruct {
-	uint64_t *lpMercy, *lpGround, *lpBrut, *lpBrutB, *lpMeteor;
-	bool bMercy = false, bGround = false, bBrut = false, bBrutB = false, bMeteor = false;
-} sCheatsStruct;
-
-void TimestopFunction(uint64_t somePtr, uint32_t rvalue)
-{
-	uint64_t rax = *(uint64_t*)(somePtr);
-
-	if (!sCamStruct.bTimestopActive)
-		rvalue = *(uint64_t*)(somePtr + 0x18);
-
-	if (*(uint64_t*)(somePtr + 0x14) == rvalue)
-		return;
-	uint64_t function_addr = *(uint64_t*)(rax + 0xD8);
-	*(uint64_t*)(somePtr + 0x14) = rvalue;
-	((void (*)(uint64_t, uint32_t))function_addr)(somePtr, rvalue);
-}
-
-uint64_t CamFunction(uint64_t lpCamPtr, uint64_t fValue)
-{
-	if (lpCamPtr != lpCaughtCamPtr)
-	{
-		lpCaughtCamPtr = lpCamPtr;
-		std::cout << "Intercepted Cam Ptr: " << std::hex << lpCamPtr << std::endl;
-	}
-
-	float* fX = (float*)(lpCamPtr + CamOffset), *fY = (float*)(lpCamPtr + CamOffset + 4), *fZ = (float*)(lpCamPtr + CamOffset + 8);
-	float* fPOV = (float*)(lpCamPtr + CamOffset + 24);
-	int32_t* iYaw = (int32_t*)(lpCamPtr + CamOffset + 16), *iPitch = (int32_t*)(lpCamPtr + CamOffset + 12), *iRot = (int32_t*)(lpCamPtr + CamOffset + 20);
-
-	if (!sCamStruct.bEnableXYZ)
-	{
-		sCamStruct.fX = *fX;
-		sCamStruct.fY = *fY;
-		sCamStruct.fZ = *fZ;
-	}
-	else
-	{
-		*fX = sCamStruct.fX;
-		*fY = sCamStruct.fY;
-		*fZ = sCamStruct.fZ;
-	}
-
-	if (!sCamStruct.bEnablePOV)
-	{
-		sCamStruct.fPOV = *fPOV;
-	}
-	else
-	{
-		*fPOV = sCamStruct.fPOV;
-	}
-	if (!sCamStruct.bEnablePiYaRot)
-	{
-		sCamStruct.iYaw = *iYaw;
-		sCamStruct.iPitch = *iPitch;
-		sCamStruct.iRot = *iRot;
-	}
-	else
-	{
-		*iYaw = sCamStruct.iYaw;
-		*iPitch = sCamStruct.iPitch;
-		*iRot = sCamStruct.iRot;
-	}
-
-	sCamStruct.bCamActive = sCamStruct.bEnablePiYaRot | sCamStruct.bEnablePOV | sCamStruct.bEnableXYZ | sCamStruct.bTimestopActive;
-
-	if (sCamStruct.bLogCam)
-	{
-		printf("Cam::XYZ: %f, %f, %f\n", *fX, *fY, *fZ);
-		printf("Cam::POV: %f\n", *fPOV);
-		printf("Cam::Yaw Pitch Rotation: %f, %f, %f\n", *iYaw, *iPitch, *iRot);
-	}
-	
-
-	return ((uint64_t(__fastcall*)(uint64_t, uint64_t))GetGameAddr(lpCamFunction))(lpCamPtr, fValue);
-}
-
+Trampoline* GameTramp, * User32Tramp;
 
 void HooksMain()
 {
-	HMODULE hUser32 = NULL;
-	HMODULE hKernelBase = NULL;
-	HMODULE hKernel32 = NULL;
-
-	hUser32 = AwaitHModule("user32.dll");
-	hKernelBase = AwaitHModule("kernelbase.dll");
-	hKernel32 = AwaitHModule("kernel32.dll");
-
-	printf("Initializing ImGui Menu\n");
-	GuiMenu->Initialize();
-
-
-	Trampoline* game_tramp = Trampoline::MakeTrampoline(GetModuleHandle(nullptr));
-	Trampoline* user32_tramp = Trampoline::MakeTrampoline(hUser32);
-	std::cout << "Generated Trampolines" << std::endl;
-
-	if (SettingsMgr->bDisableAntiCheatEngine)
-	{
-		std::cout << "==bDisableAntiCheatEngine==" << std::endl;
-		char* antiCEFunctionName = "EnumChildWindows";
-		std::cout << "Patching " << antiCEFunctionName << std::endl;
-		uint64_t hook_address = (uint64_t)GetProcAddress(hUser32, antiCEFunctionName);
-		std::cout << "Found at " << std::hex << hook_address << std::dec << std::endl;
-		Patch(hook_address, 0xC3);
-		Patch(hook_address + 1, 0x90909090);
-		sActiveMods.bAntiCheatEngine = true;
-		std::cout << "Anti Cheat Engine Patched" << std::endl;
-	}
-
-	if (SettingsMgr->bDisableAntiCVD1)
-	{
-		std::cout << "==bDisableAntiCVD1==" << std::endl;
-		if (!SettingsMgr->iCVD1.empty())
-		{
-			uint64_t hook_address = stoui64h(SettingsMgr->iCVD1);
-			std::cout << "Patching at " << std::hex << hook_address << std::dec << std::endl;
-			Patch(GetGameAddr(hook_address), (uint16_t)0xC039); // cmp eax, eax
-			Patch(GetGameAddr(hook_address) + 2, (uint16_t)0x9090); // Nop
-			sActiveMods.bAntiCVD1 = true;
-			std::cout << "Anti CVD1 Patched" << std::endl;
-		}
-		else std::cout << "Address Not Specified. Please Add Address to ini file!" << std::endl;
-		
-	}
-
-	if (SettingsMgr->bDisableAntiCVD2)
-	{
-		std::cout << "==bDisableAntiCVD2==" << std::endl;
-		if (!SettingsMgr->iCVD2.empty())
-		{
-			uint64_t hook_address = stoui64h(SettingsMgr->iCVD2);
-			std::cout << "Patching at " << std::hex << hook_address << std::dec << std::endl;
-			Patch(GetGameAddr(hook_address), (uint8_t)0xC3); // ret
-			sActiveMods.bAntiCVD2 = true;
-			std::cout << "Anti CVD2 Patched" << std::endl;
-		}
-		else std::cout << "Address Not Specified. Please Add Address to ini file!" << std::endl;
-		
-	}
-
+	
 	if (SettingsMgr->bPatchUnlocker)
 	{
 		std::cout << "==bPatchUnlocker==" << std::endl;
 		std::cout << "Injecting VR2 Proxy Function" << std::endl;
 
-		InjectHook(GetGameAddr(0x40BE75E), game_tramp->Jump(vr2_proxy_function), PATCH_CALL);
+		InjectHook(GetGameAddr(0x40BE75E), GameTramp->Jump(MK11Hooks::VR2Proxy), PATCH_CALL);
 		CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)UnlockerPipe, NULL, NULL, NULL);
 
 	}
 
-	if (SettingsMgr->bModLoader)
+	if (SettingsMgr->bEnableTimeStop)
 	{
-		std::cout << "==bModLoader==" << std::endl;
-		if (!SettingsMgr->iModLoader.empty())
-		{
-			uint64_t hook_address = stoui64h(SettingsMgr->iModLoader);
-			std::cout << "Patching at " << std::hex << hook_address << std::dec << std::endl;
-			Patch<uint64_t>(GetGameAddr(hook_address), (uint64_t)CreateFileProxy);
-		}
-		else std::cout << "Address Not Specified. Please Add Address to ini file!" << std::endl;
-		
-	}
-
-	if (SettingsMgr->bEnableCameraMod)
-	{
-		std::cout << "==bEnableCameraMod==" << std::endl;
-		std::cout << "Searching for Pattern: " << SettingsMgr->pCam << std::endl;
-		uint64_t* lpCamPattern = find_pattern(GetModuleHandleA(NULL), SettingsMgr->pCam);
-		if (lpCamPattern != nullptr)
-		{
-			CamOffset = stoui64h(SettingsMgr->iCamOffset); // Set it once to reduce workload on cam function
-			uint64_t lpHookfunction = ((uint64_t)lpCamPattern) + 0x35;
-			std::cout << "Camera Pattern found at: " << std::hex << lpCamPattern << std::endl;
-			std::cout << "Hooking function at: " << lpHookfunction << std::endl;
-			uint32_t call_distance;
-			memcpy(&call_distance, (uint32_t*)GetGameAddr(lpHookfunction + 1), 4);
-			//std::cout << "Function Call Distance: " << call_distance << std::endl;
-			lpCamFunction = call_distance + lpHookfunction + 0x5; // 0x5 is the size of cur opcodes
-			std::cout << "Function to be called: " << lpCamFunction << std::endl;
-
-			InjectHook(GetGameAddr(lpHookfunction), game_tramp->Jump(CamFunction), PATCH_CALL);
-			std::cout << "Patched Camera Function" << std::dec << std::endl;
-
-			CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)CamListener, NULL, NULL, NULL);
-			std::cout << "Launched Cam Thread" << std::endl;
-			sCamStruct.bCamEnabled = true;
-
-		}
-		else
-		{
-			std::cout << "Couldn't Patch Camera Function. Camera Mod Disabled" << std::endl;
-		}
-		uint64_t* lpTimestopPattern = find_pattern(GetModuleHandleA(NULL), SettingsMgr->pTimestop);
+		uint64_t* lpTimestopPattern = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pTimestop);
 		if (lpTimestopPattern != nullptr)
 		{
 			std::cout << "Timestop Pattern found at: " << std::hex << lpTimestopPattern << std::endl;
-			InjectHook(GetGameAddr((uint64_t)lpTimestopPattern), game_tramp->Jump(TimestopFunction), PATCH_JUMP);
+			InjectHook(GetGameAddr((uint64_t)lpTimestopPattern), GameTramp->Jump(MK11Hooks::TimestopFunction), PATCH_JUMP);
 			std::cout << "Patched TimeStop" << std::dec << std::endl;
+			sCamStruct.bTimestopEnabled = true;
 		}
 		else
 		{
@@ -283,16 +269,17 @@ void HooksMain()
 	if (SettingsMgr->bEnableIntroSwap)
 	{
 		std::cout << "==bEnableIntroSwap==" << std::endl;
-		uint64_t* lpIntroSwap = find_pattern(GetModuleHandleA(NULL), SettingsMgr->pIntroSwap);
+		uint64_t* lpIntroSwap = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pIntroSwap);
 		if (lpIntroSwap != NULL)
 		{
 			uint64_t fix_len_add = (uint64_t)lpIntroSwap;
 			Patch<uint16_t>(fix_len_add, 0x428d); // lea eax, [rdx+
 			Patch<uint8_t>(fix_len_add + 2, 0x2A); // 0x2A]
 			uint64_t hook_address = fix_len_add + 0x35;
-			InjectHook(hook_address, game_tramp->Jump(MK11Hooks::IntroSwap), PATCH_CALL);
+			InjectHook(hook_address, GameTramp->Jump(MK11Hooks::IntroSwap), PATCH_CALL);
 			sActiveMods.bIntroSwap = true;
 			std::cout << "Patched Anims Loader" << std::endl;
+			MK11::PopulateCharList();
 		}
 		else
 		{
@@ -303,182 +290,184 @@ void HooksMain()
 	if (SettingsMgr->bEnableCheats)
 	{
 		std::cout << "==bEnableCheats==" << std::endl;
-		SetCheatPattern(SettingsMgr->pMercyAnyTime, "pMercyAnyTime", &(sCheatsStruct.lpMercy));
-		SetCheatPattern(SettingsMgr->pNoGroundReq, "pNoGroundReq", &(sCheatsStruct.lpGround));
-		SetCheatPattern(SettingsMgr->pNoBrutalityReq, "pNoBrutalityReq", &(sCheatsStruct.lpBrut));
-		SetCheatPattern(SettingsMgr->pBrutalityAlwaysCorrect, "pBrutalityAlwaysCorrect", &(sCheatsStruct.lpBrutB));
-		SetCheatPattern(SettingsMgr->pMeteorAlwaysSpawns, "pMeteorAlwaysSpawns", &(sCheatsStruct.lpMeteor));
+		SetCheatPattern(SettingsMgr->pMercyAnyTime,				"pMercyAnyTime",			&(sCheatsStruct.lpMercy));
+		SetCheatPattern(SettingsMgr->pNoGroundReq,				"pNoGroundReq",				&(sCheatsStruct.lpGround));
+		SetCheatPattern(SettingsMgr->pNoBrutalityReq,			"pNoBrutalityReq",			&(sCheatsStruct.lpBrut));
+		SetCheatPattern(SettingsMgr->pBrutalityAlwaysCorrect,	"pBrutalityAlwaysCorrect",	&(sCheatsStruct.lpBrutB));
+		SetCheatPattern(SettingsMgr->pMeteorAlwaysSpawns,		"pMeteorAlwaysSpawns",		&(sCheatsStruct.lpMeteor));
+		SetCheatPattern(SettingsMgr->pFatalityAlwaysAvailable,	"pFatalityAlwaysAvailable", &(sCheatsStruct.lpFatality));
+		SetCheatPattern(SettingsMgr->pDizzyAlwaysAvailable,		"pDizzyAlwaysAvailable",	&(sCheatsStruct.lpDizzy));
+		SetCheatPattern(SettingsMgr->pComboInFatality,			"pComboInFatality",			&(sCheatsStruct.lpFatCombo));
+		SetCheatPattern(SettingsMgr->pBlockingDisabled,			"pBlockingDisabled",		&(sCheatsStruct.lpNoBlock));
+		SetCheatPattern(SettingsMgr->pFatalBlowAtMaxHealth,		"pFatalBlowAtMaxHealth",	&(sCheatsStruct.lpFatalBlow));
 	}
 
-
-	while (1)
-	{
-		// ImGui Menu
-		if (GetAsyncKeyState(SettingsMgr->iVKMenuToggle))
-		{
-			GuiMenu->ToggleActive();
-			while (GetAsyncKeyState(SettingsMgr->iVKMenuToggle)); // Wait
-		}
-		
-
-		if (GetAsyncKeyState(VK_F10) && SettingsMgr->bPatchUnlocker)
-		{
-			while (GetAsyncKeyState(VK_F10)); // wait
-
-			uint64_t res;
-			vr2_proxy_function(0, &res, "thethiny");
-			char* hash = (char*)res;
-			printf("Output: %X (%s)\n", res, hash);
-		}
-
-		// Cheats
-		if (SettingsMgr->bEnableCheats)
-		{
-			while (GetAsyncKeyState(SettingsMgr->iVKCheats))
-			{
-				if (GetAsyncKeyState('1') && sCheatsStruct.lpMercy)
-				{
-					std::cout << "pMercyAnyTime ";
-					if (sCheatsStruct.bMercy)
-					{
-						std::cout << "Disabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMercy), 0x5340); // push rbx // Change this to read it automatically from memory, or verify against a hash or something
-						Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpMercy) + 2), 0x48);
-					}
-					else
-					{
-						std::cout << "Enabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMercy), 0x01B0); // mov al, 1
-						Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpMercy) + 2), 0xC3);
-					}
-					std::cout << std::endl;
-					sCheatsStruct.bMercy = !sCheatsStruct.bMercy;
-					while (GetAsyncKeyState('1')); // Wait
-				}
-				if (GetAsyncKeyState('2') && sCheatsStruct.lpGround)
-				{
-					std::cout << "pNoGroundReq ";
-					if (sCheatsStruct.bGround)
-					{
-						std::cout << "Disabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpGround), 0x5340); // mov al, 1
-						Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpGround) + 2), 0x48);
-					}
-					else
-					{
-						std::cout << "Enabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpGround), 0x01B0); // mov al, 1
-						Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpGround) + 2), 0xC3);
-					}
-					std::cout << std::endl;
-					sCheatsStruct.bGround = !sCheatsStruct.bGround;
-					while (GetAsyncKeyState('2')); // Wait
-				}
-				if (GetAsyncKeyState('3') && sCheatsStruct.lpBrut)
-				{
-					std::cout << "pNoBrutalityReq ";
-					if (sCheatsStruct.bBrut)
-					{
-						std::cout << "Disabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrut), 0x8948);
-						Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrut) + 2), 0x6C);
-						if (sCheatsStruct.lpBrutB)
-						{
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrutB), 0x5340);
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrutB) + 2), 0x48);
-						}
-					}
-					else
-					{
-						std::cout << "Enabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrut), 0x01B0); // mov al, 1
-						Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrut) + 2), 0xC3);
-						if (sCheatsStruct.lpBrutB)
-						{
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrutB), 0x01B0); // mov al, 1
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrutB) + 2), 0xC3);
-						}
-					}
-					std::cout << std::endl;
-					sCheatsStruct.bBrut = !sCheatsStruct.bBrut;
-					while (GetAsyncKeyState('3')); // Wait
-				}
-				if (GetAsyncKeyState('4') && sCheatsStruct.lpMeteor)
-				{
-					std::cout << "pMeteorAlwaysSpawns ";
-					if (sCheatsStruct.bMeteor)
-					{
-						std::cout << "Disabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMeteor), 0x1C75); // jne +1E
-					}
-					else
-					{
-						std::cout << "Enabled";
-						Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMeteor), 0x9090); // nop, nop
-					}
-					std::cout << std::endl;
-					sCheatsStruct.bMeteor = !sCheatsStruct.bMeteor;
-					while (GetAsyncKeyState('4')); // Wait
-				}
-			}
-		}
-	}
-
+	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)BlockerEvents, NULL, NULL, NULL);
 }
 
-
-void CamListener()
+void SyncAwait(std::string(*function)(void), const char* string, bool not = false)
 {
-	while (1) // Read Hotkeys and Speed from ini
-	{
-		if (GetAsyncKeyState(SettingsMgr->iVKCamToggle))
-		{
-			sCamStruct.bCamActive = !sCamStruct.bCamActive;
-			if (sCamStruct.bCamActive)
-			{
-				std::cout << "Cam::On" << std::endl;
-			}
-			else 
-			{
-				std::cout << "Cam::Off" << std::endl;
-			}
+	while (function().empty() ^ not);
+	std::cout << string << ": " << function() << std::endl;
+}
 
-			while (GetAsyncKeyState(SettingsMgr->iVKCamToggle)); // wait until negative edge
-		}
-		if (GetAsyncKeyState(SettingsMgr->iVKtimestop))
+void BlockerEvents()
+{
+	SyncAwait(&MK11::GetGameVersion, "Game Version");
+	SyncAwait(&MK11::GetGameVersionFull, "Game FullVersion");
+}
+
+void PreGameHooks()
+{
+	GameTramp = Trampoline::MakeTrampoline(GetModuleHandle(nullptr));
+	std::cout << "Generated Trampolines" << std::endl;
+
+	if (SettingsMgr->FORCE_CHECK_VER)
+	{
+		std::cout << "==bGetGameVersionShort==" << std::endl;
+		if (SettingsMgr->pGameVer.empty())
 		{
-			sCamStruct.bTimestopActive = !sCamStruct.bTimestopActive;
-			if (sCamStruct.bTimestopActive)
+			std::cout << "GameVer Not Specified. Please Add Pattern to ini file!" << std::endl;
+		}
+		else
+		{
+			uint64_t* lpPattern = FindPattern(GetModuleHandleA(NULL), "49 63 4C 24 08 85 C9 74 12");
+			if (!lpPattern)
 			{
-				std::cout << "TimeStop::On" << std::endl;
+				std::cout << "Couldn't find Game Version Pattern" << std::endl;
 			}
 			else
 			{
-				std::cout << "TimeStop::Off" << std::endl;
+				lpPattern = (uint64_t*)((uint64_t)(lpPattern)+0xF);
+				uint64_t offset = 0;
+				memcpy(&offset, lpPattern, 4);
+				offset += ((uint64_t)lpPattern) + 4;
+				std::cout << std::hex << "Game Version Offset: " << offset << std::endl;
+				MK11::lpGameVersion = (uint64_t*)offset;
+			}
+		}
+
+		std::cout << "==bGetGameVersion==" << std::endl;
+		if (SettingsMgr->pGameVerFull.empty())
+		{
+			std::cout << "GameVerFull Not Specified. Please Add Pattern to ini file!" << std::endl;
+		}
+		else
+		{
+			uint64_t* lpPattern = FindPattern(GetModuleHandleA(NULL), "48 89 84 24 ? ? ? ? 4c 8b f1 33 DB 89 5C 24");
+			if (!lpPattern)
+			{
+				std::cout << "Couldn't find Game FullVersion Pattern" << std::endl;
+			}
+			else
+			{
+				std::cout << "Game FullVersion Pattern found at: " << std::hex << lpPattern << std::dec << std::endl;
+				lpPattern = (uint64_t*)((uint64_t)lpPattern + 0x1C);
+				uint64_t offset = 0;
+				memcpy(&offset, lpPattern, 4);
+				offset += (uint64_t)lpPattern + 4;
+				std::cout << std::hex << "Game FullVersion Offset: " << offset << std::endl;
+				MK11::lpGameVersionFull = (uint64_t*)offset;
 			}
 
-			while (GetAsyncKeyState(SettingsMgr->iVKtimestop)); // wait until negative edge
-
 		}
-		if (sCamStruct.bCamActive) // Check for Buttons to perform cam stuff
+
+		if (SettingsMgr->bModLoader)
 		{
-			ListenCamHotkey(SettingsMgr->iVKxp, &(sCamStruct.fX), true);
-			ListenCamHotkey(SettingsMgr->iVKxm, &(sCamStruct.fX), false);
-			ListenCamHotkey(SettingsMgr->iVKyp, &(sCamStruct.fY), true);
-			ListenCamHotkey(SettingsMgr->iVKym, &(sCamStruct.fY), false);
-			ListenCamHotkey(SettingsMgr->iVKzp, &(sCamStruct.fZ), true);
-			ListenCamHotkey(SettingsMgr->iVKzm, &(sCamStruct.fZ), false);
-			ListenCamHotkey(SettingsMgr->iVKfovp, &(sCamStruct.fPOV), true, SettingsMgr->fSpeed / 10);
-			ListenCamHotkey(SettingsMgr->iVKfovm, &(sCamStruct.fPOV), false, SettingsMgr->fSpeed / 10);
-			ListenCamHotkey(SettingsMgr->iVKrotp, &(sCamStruct.iRot), true);
-			ListenCamHotkey(SettingsMgr->iVKrotm, &(sCamStruct.iRot), false);
-			ListenCamHotkey(SettingsMgr->iVKpitchp, &(sCamStruct.iPitch), true);
-			ListenCamHotkey(SettingsMgr->iVKpitchm, &(sCamStruct.iPitch), false);
-			ListenCamHotkey(SettingsMgr->iVKyawp, &(sCamStruct.iYaw), true);
-			ListenCamHotkey(SettingsMgr->iVKyawm, &(sCamStruct.iYaw), false);
+			ParsePEHeader();
+			std::cout << "==bModLoader==" << std::endl;
+			uint64_t CreateFileW = IAT["kernel32.dll"]["CreateFileW"];
+			if (!CreateFileW)
+			{
+				std::cout << "Couldn't find CreateFileW in kernel32.dll!";
+			}
+			else
+			{
+				const char* CFWPattern = HexToString(CreateFileW).c_str();
+				sActiveMods.bModLoader = true;
+				int32_t patched = 0;
+
+				std::cout << "Patching Kernel32.CreateFileW (" << std::hex << CreateFileW << ")" << std::endl;
+
+				uint64_t lpPattern = (uint64_t)FindPattern(GetModuleHandleA(NULL), CFWPattern);
+				while (lpPattern)
+				{
+					Patch<uint64_t>(GetGameAddr(lpPattern), (uint64_t)MK11Hooks::CreateFileProxy);
+					std::cout << "Patched at " << std::hex << lpPattern << std::endl;
+					patched++;
+					lpPattern = (uint64_t)FindPattern(GetModuleHandleA(NULL), CFWPattern);
+				}
+				if (!patched)
+				{
+					std::cout << "Couldn't patch CreateFileW!" << std::endl;
+				}
+			}
+			
 		}
 	}
+
+
+	if (SettingsMgr->bDisableAntiCheatEngine)
+	{
+		std::cout << "==bDisableAntiCheatEngine==" << std::endl;
+		uint64_t Func = (uint64_t)IAT["user32.dll"]["EnumChildWindows"];
+		if (Func)
+		{
+			std::cout << "Found at " << std::hex << Func << std::dec << std::endl;
+			Patch(Func, 0xC3);
+			Patch(Func + 1, 0x90909090);
+			sActiveMods.bAntiCheatEngine = true;
+			std::cout << "Anti Cheat Engine Patched" << std::endl;
+		}
+		else
+		{
+			std::cout << "Disabling Anti Cheat Engine" << std::endl;
+		}
+	}
+
+	if (SettingsMgr->bDisableAntiCVD)
+	{
+		std::cout << "==bDisableAntiCVD==" << std::endl;
+		if (SettingsMgr->pCVD1.empty())
+		{
+			std::cout << "CVD1 Not Specified. Please Add Pattern to ini file!" << std::endl;
+		}
+		else if (SettingsMgr->pCVD2.empty())
+		{
+			std::cout << "CVD2 Not Specified. Please Add Pattern to ini file!" << std::endl;
+		}
+		else
+		{
+			uint64_t* lpCVDPattern = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pCVD1);
+			uint64_t* lpCVD2Pattern = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pCVD2);
+			if (!lpCVDPattern)
+			{
+				std::cout << "Couldn't find CVD1 Pattern" << std::endl;
+			}
+			else if (!lpCVD2Pattern)
+			{
+				std::cout << "Couldn't find CVD2 Pattern" << std::endl;
+			}
+			else
+			{
+				uint64_t hook_address = (uint64_t)lpCVDPattern;
+				std::cout << "CVD1 Pattern found at: " << std::hex << lpCVDPattern << std::dec << std::endl;
+				Patch(GetGameAddr(hook_address), (uint16_t)0xC039); // cmp eax, eax
+				Patch(GetGameAddr(hook_address) + 2, (uint16_t)0x9090); // Nop
+				sActiveMods.bAntiCVD1 = true;
+				std::cout << "Anti CVD1 Patched" << std::endl;
+
+				hook_address = (uint64_t)lpCVD2Pattern;
+				std::cout << "CVD2 Pattern found at: " << std::hex << lpCVD2Pattern << std::dec << std::endl;
+				Patch(GetGameAddr(hook_address), (uint8_t)0xC3); // ret
+				sActiveMods.bAntiCVD2 = true;
+				std::cout << "Anti CVD2 Patched" << std::endl;
+			}
+		}
+
+	}
 }
+
 
 void UnlockerPipe()
 {
@@ -523,7 +512,7 @@ void UnlockerPipe()
 			std::cout << "Pipe::Received (" << dwRead << "): " << received << "<-" << std::endl;
 
 			uint64_t res;
-			vr2_game_function(0x1431B1FD0, &res, received.c_str());
+			MK11Hooks::procVR2Function(0x1431B1FD0, &res, received.c_str());
 			char* hash = (char*)res;
 
 			std::string to_send(hash);
@@ -551,8 +540,7 @@ void OnInitializeHook()
 	if (process_name != expected_process)
 	{
 		if (process_name == expected_process_dx12)
-			MessageBoxA(NULL, "ASIMK11 doesn't support DX12 version of the game", "ASIMK11", 0);
-		return;
+			MessageBoxA(NULL, "ASIMK11 doesn't officially support DX12 version of the game. It may misbehave.", "ASIMK11", MB_ICONEXCLAMATION);
 	}
 
 	SettingsMgr->Init();
@@ -562,76 +550,30 @@ void OnInitializeHook()
 		std::cout << "Console Created!" << std::endl;
 	}
 
+	PreGameHooks(); // Queue Blocker
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)HooksMain, NULL, NULL, NULL);
-}
-
-std::vector<std::string> FindASIs(HMODULE hDllModule)
-{
-	/*HANDLE hModuleSnap = INVALID_HANDLE_VALUE;
-	MODULEENTRY32 me32;
-
-	std::vector<std::string> ASIs;
-
-	hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, GetCurrentProcessId());
-	if (hModuleSnap == INVALID_HANDLE_VALUE)
-		return ASIs;
-
-	me32.dwSize = sizeof(MODULEENTRY32);
-
-	if (!Module32First(hModuleSnap, &me32))
-		return ASIs;
-
-	do {
-		ASIs.push_back(std::string(me32.szModule));
-	} while (Module32Next(hModuleSnap, &me32));
-
-	CloseHandle(hModuleSnap);
-
-	return ASIs;*/
-
-	WIN32_FIND_DATA w32Data;
-	std::vector<std::string> ASIs;
-	HANDLE hFind = FindFirstFile("*.asi", &w32Data);
-	if (hFind == INVALID_HANDLE_VALUE)
-	{
-		FindClose(hFind);
-		return ASIs;
-	}
-		
-
-	char lpAsiName[MAX_PATH];
-	DWORD chars = GetModuleFileName(hDllModule, lpAsiName, MAX_PATH + 1);
-	std::string szAsiName(lpAsiName);
-	if (chars)
-	{
-		MessageBoxA(nullptr, lpAsiName, "Name", 0);
-	}
-
-	do {
-		std::string szFileName(w32Data.cFileName);
-		if (szAsiName.substr(szAsiName.length() - szFileName.length(), szFileName.length()) != szFileName) // Avoid Myself
-		{
-			ASIs.push_back(szFileName);
-		}
-		
-	} while (FindNextFile(hFind, &w32Data));
-
-	FindClose(hFind);
-	return ASIs;
-
 }
 
 bool APIENTRY DllMain(HMODULE hModule, DWORD reason, LPVOID lpRes)
 {
+	HHOOK hook_ = nullptr;
 	switch (reason)
 	{
 	case DLL_PROCESS_ATTACH:
-		//CreateThread(nullptr, 0, MenuGuiMainThread, hModule, 0, nullptr);
+		CreateThread(nullptr, 0, MenuGuiMainThread, hModule, 0, nullptr);
 		OnInitializeHook();
+		if (!(hook_ = SetWindowsHookEx(WH_KEYBOARD, KeyboardProc, hModule, GetCurrentThreadId())))
+		{
+			char x[100];
+			sprintf(x, "Failed To Hook Keyboard FN: 0x%X", GetLastError());
+			MessageBox(NULL, x, "Error", MB_ICONERROR);
+		}
 		break;
 	case DLL_THREAD_ATTACH:
 	case DLL_THREAD_DETACH:
 	case DLL_PROCESS_DETACH:
+		if (hook_)
+			UnhookWindowsHookEx(hook_);
 		break;
 	}
 	return true;
