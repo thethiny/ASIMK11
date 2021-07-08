@@ -1,9 +1,11 @@
 #include "..\pch.h"
 #include "mk11utils.h"
+#include <map>
 
 using namespace Memory::VP;
 using namespace hook;
 
+extern std::map<std::string, FuncMap> IAT{};
 
 // Address Utilities
 
@@ -30,14 +32,6 @@ int64 GetGameAddr(__int64 addr)
 	if (addr > GetGameEntryPoint())
 		return addr;
 	return GetGameEntryPoint() + addr;
-	//int64 new_addr = GetGameEntryPoint() + addr;
-	/*if (new_addr - 0x140000000 <= 0)
-	{
-		return new_addr;
-	}
-	return new_addr - 0x140000000;*/
-	//return GetGameEntryPoint() - 0x140000000 + addr;
-	//return GetGameEntryPoint() + addr;
 }
 
 int64 GetUser32Addr(__int64 addr)
@@ -74,21 +68,25 @@ std::string toUpper(std::string s)
 	return new_string;
 }
 
+std::string GetFileName(std::string filename)
+{
+	std::string basename;
+	size_t pos = filename.find_last_of("/\\"); // Or
+	if (pos != -1)
+	{
+		basename = filename.substr(pos + 1);
+		return basename;
+	}
+	return filename;
+}
+
 std::string GetProcessName()
 {
 	CHAR fileName[MAX_PATH + 1];
 	DWORD chars = GetModuleFileNameA(NULL, fileName, MAX_PATH + 1);
 	if (chars)
 	{
-		std::string basename;
-		std::string filename = std::string(fileName);
-		size_t pos = filename.find_last_of('\\');
-		if (pos != -1)
-		{
-			basename = filename.substr(pos + 1);
-			return basename;
-		}
-		return filename;
+		return GetFileName(std::string(fileName));
 	}
 	return "";
 }
@@ -139,7 +137,7 @@ uint64_t stoui64h(std::string szString)
 }
 
 
-uint64_t* find_pattern(void* handle, std::string_view bytes)
+uint64_t* FindPattern(void* handle, std::string_view bytes)
 {
 	hook::pattern pCamPattern = hook::make_module_pattern(handle, bytes); // Make pattern external
 	if (!pCamPattern.count_hint(1).empty())
@@ -154,7 +152,7 @@ void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern
 	if (!pattern.empty())
 	{
 		std::cout << "Searching for " << name << ": " << pattern << std::endl;
-		*lpPattern = find_pattern(GetModuleHandleA(NULL), pattern);
+		*lpPattern = FindPattern(GetModuleHandleA(NULL), pattern);
 		if (*lpPattern != nullptr)
 		{
 			std::cout << "Found at: " << std::hex << *lpPattern << std::dec << std::endl;
@@ -166,23 +164,37 @@ void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern
 	}
 }
 
-//template <class CamType>
-//void ListenCamHotkey<CamType>(int VK_btn, CamType* addr, bool inc, double speed, float WaitDuration) // Eventually Change this Function to allow for Holding Shift by returning char as state. 0 = No, 1 = yes, -1 = shift.
-//{
-//	if (GetAsyncKeyState(VK_btn))
-//	{
-//		if (!inc)
-//			speed = -speed;
-//		*addr += speed;
-//		auto start = std::chrono::system_clock::now();
-//		while (GetAsyncKeyState(VK_btn))
-//		{
-//			std::chrono::duration<double> now = std::chrono::system_clock::now() - start;
-//			if (now.count() > WaitDuration)
-//			{
-//				*addr += speed;
-//				start = std::chrono::system_clock::now();
-//			}
-//		}
-//	}
-//}
+void ParsePEHeader()
+{
+	PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)GetModuleHandleA(NULL);
+	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)RVAtoLP((PBYTE)pDosHeader, pDosHeader->e_lfanew);
+	if (pNTHeader->Signature != IMAGE_NT_SIGNATURE)
+		throw(-1);
+
+	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)RVAtoLP(pDosHeader, pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
+
+	for (int i = 0; pImportDesc[i].Characteristics != 0; i++)
+	{
+		std::string szLibrary = (char*)RVAtoLP(pDosHeader, pImportDesc[i].Name);
+		if (!pImportDesc[i].FirstThunk || !pImportDesc[i].OriginalFirstThunk)
+			throw(-1);
+
+		PIMAGE_THUNK_DATA pThunk = (PIMAGE_THUNK_DATA)RVAtoLP(pDosHeader, pImportDesc[i].FirstThunk);
+		PIMAGE_THUNK_DATA pOrigThunk = (PIMAGE_THUNK_DATA)RVAtoLP(pDosHeader, pImportDesc[i].OriginalFirstThunk);
+
+		FuncMap FunctionsMap{};
+
+		for (; pOrigThunk->u1.Function != NULL; pOrigThunk++, pThunk++)
+		{
+			if (pOrigThunk->u1.Ordinal & IMAGE_ORDINAL_FLAG)
+				continue;
+
+			PIMAGE_IMPORT_BY_NAME import = (PIMAGE_IMPORT_BY_NAME)RVAtoLP(pDosHeader, pOrigThunk->u1.AddressOfData);
+
+			std::string FuncName = (char*)import->Name;
+			FunctionsMap[FuncName] = pThunk->u1.Function;
+		}
+		IAT[szLibrary] = FunctionsMap;
+	}
+
+}
