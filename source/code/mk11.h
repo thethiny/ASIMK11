@@ -15,20 +15,20 @@ enum  PLAYER_NUM
 	BACKGROUND_PLAYER = 0x7,
 };
 
+enum MOD_HOOK_STATUS
+{
+	SUCCESS = 0,
+	DISABLED,
+	NOT_SPECIFIED,
+	NOT_FOUND
+};
+
 namespace MK11 {
 
 	struct CamStruct {
-		float fX = 0, fY = 0, fZ = 0; // Change to pointers
-		float fPOV = 0;
-		int32_t iYaw = 0, iPitch = 0, iRot = 0;
 		bool bLogCam = false; //Make it a flag to control prints
-		bool bCamActive = false;
-		bool bCamEnabled = false;
 		bool bTimestopActive = false;
-		bool bEnableXYZ = false;
-		bool bEnablePOV = false;
-		bool bEnablePiYaRot = false;
-		uint32_t uCamSpeed = 5;
+		bool bTimestopEnabled = false;
 	};
 
 	struct IntroStruct {
@@ -37,25 +37,53 @@ namespace MK11 {
 		bool bEnabled = false;
 	};
 
-	extern const char* szCharacters[];
-	//extern char szCharacterSelected[];
+	struct CharacterStruct {
+		std::string name;
+		uint8_t intros=0;
+	};
+
+	bool operator==(const CharacterStruct& s1, std::string s2);
+
+	extern std::vector<CharacterStruct> sCharacters;
+	extern uint8_t ulCharactersCount;
+	extern uint64_t* lpGameVersion;
+	extern uint64_t* lpGameVersionFull;
+	void PopulateCharList();
 
 	struct ActiveMods {
 		bool bIntroSwap = false;
 		bool bAntiCheatEngine = false;
 		bool bAntiCVD1 = false;
 		bool bAntiCVD2 = false;
+		bool bModLoader = false;
 	};
+
+	struct CheatsStruct {
+		uint64_t* lpMercy, * lpGround, * lpBrut, * lpBrutB, * lpMeteor, * lpDizzy, *lpFatality, *lpFatCombo, *lpNoBlock, *lpFatalBlow;
+		bool bMercy = false, bGround = false, bBrut = false, bBrutB = false, bMeteor = false, bDizzy = false, bFatality = false, bFatCombo = false, bNoBlock = false, bFatalBlow = false;
+	};
+
+	extern std::vector<std::wstring> vSwappedFiles;
+
+	std::string GetGameVersion();
+	std::string GetGameVersionFull();
 
 }
 
 extern MK11::CamStruct sCamStruct;
 extern MK11::IntroStruct sIntroStruct, sIntroStruct2;
 extern MK11::ActiveMods sActiveMods;
+extern MK11::CheatsStruct sCheatsStruct;
 
 
 namespace MK11Hooks {
 	void IntroSwap(char* dest, char* source, uint64_t length);
+	void TimestopFunction(uint64_t somePtr, uint32_t rvalue);
+	HANDLE __stdcall CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
+	uint64_t* __fastcall VR2Proxy(uint64_t seed, uint64_t* result_hash, const char* to_hash);
+
+	typedef uint64_t* (__fastcall VR2Function)(uint64_t seed, uint64_t* result_hash, const char* to_hash);
+	extern VR2Function* procVR2Function;
 }
 
 
