@@ -49,22 +49,75 @@ std::vector<string> string::rsplit(string ToFind, int MaxSplit)
 	return found;
 }
 
-string string::lower(string s)
+string string::lower()
 {
 	string new_string("");
-	for (int i = 0; i < s.length(); i++)
+	for (int i = 0; i < this->length(); i++)
 	{
-		new_string += std::tolower(s[i]);
+		new_string += std::tolower((*this)[i]);
 	}
 	return new_string;
 }
 
-string string::upper(string s)
+string string::upper()
 {
 	string new_string("");
-	for (int i = 0; i < s.length(); i++)
+	for (int i = 0; i < this->length(); i++)
 	{
-		new_string += std::toupper(s[i]);
+		new_string += std::toupper((*this)[i]);
 	}
 	return new_string;
+}
+
+string string::join(string* str, uint64_t size)
+{
+	string x = "";
+	for (uint64_t i = 0; i < size; i++)
+	{
+		x += str [i];
+		if (i == size - 1)
+		{
+			x += *this;
+		}
+	}
+	return x;
+}
+
+string string::strip(string ToStrip)
+{
+	string x = *this;
+	uint64_t pos = 0, posend = x.length();
+	for (auto i = 0; i < x.length(); i++)
+	{
+		bool in = false;
+		bool in2 = false;
+		for (auto j = 0; j < ToStrip.length(); j++)
+		{
+			if (x[i] == ToStrip[j])
+			{
+				in = true;
+			}
+			if (x[x.length() - i - 1] == ToStrip[j])
+			{
+				in2 = true;
+			}
+		}
+		if (in)
+			pos = i;
+		if (in2)
+			posend = x.length() - i - 1;
+	}
+
+	return x.substr(pos, posend-pos);
+}
+
+bool string::startswith(string Start)
+{
+	return !strncmp(*this, Start, Start.length());
+}
+
+bool string::endswith(string End)
+{
+	string NewStr = this->substr(this->length() - End.length());
+	return !strncmp(NewStr, End, End.length());
 }
