@@ -1,13 +1,11 @@
 #pragma once
 #include<string>
 
-// as usual, pluginmh/mugenhook
-
 class eSettingsManager {
 public:
 	void Init();
-	int StringToVK(std::string);
 
+public:
 	// Booleans
 	bool bEnableConsoleWindow;
 	bool bPauseOnStart;
