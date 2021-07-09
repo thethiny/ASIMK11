@@ -75,7 +75,7 @@ void MK11Menu::Draw()
 	if (iCurrentTab == eTabs::CAMERA)
 	{
 		ImGui::Separator();
-		ImGui::Checkbox("Timestop", &sCamStruct.bTimestopActive);
+		ImGui::Checkbox("Timestop", &MK11::sCamStruct.bTimestopActive);
 	}
 	else if (iCurrentTab == eTabs::UNLOCKER)
 	{
@@ -86,7 +86,7 @@ void MK11Menu::Draw()
 	{
 		ImGui::Text("Intro Swap Status:");
 		ImGui::SameLine();
-		if (!sActiveMods.bIntroSwap)
+		if (!MK11::sActiveMods.bIntroSwap)
 		{
 			if (SettingsMgr->bEnableIntroSwap)
 			{
@@ -106,9 +106,9 @@ void MK11Menu::Draw()
 			ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Enabled");
 			ImGui::Text("P1 -");
 			ImGui::SameLine();
-			if (sIntroStruct.bEnabled)
+			if (MK11::sIntroStruct.bEnabled)
 			{
-				if (sIntroStruct.PName[0] && sIntroStruct.PChar[0] && sIntroStruct.PName2[0] && sIntroStruct.PChar2[0])
+				if (MK11::sIntroStruct.PName[0] && MK11::sIntroStruct.PChar[0] && MK11::sIntroStruct.PName2[0] && MK11::sIntroStruct.PChar2[0])
 				{
 					ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
 				}
@@ -124,9 +124,9 @@ void MK11Menu::Draw()
 			ImGui::SameLine();
 			ImGui::Text("- P2 -");
 			ImGui::SameLine();
-			if (sIntroStruct2.bEnabled)
+			if (MK11::sIntroStruct2.bEnabled)
 			{
-				if (sIntroStruct2.PName[0] && sIntroStruct2.PChar[0] && sIntroStruct2.PName2[0] && sIntroStruct2.PChar2[0])
+				if (MK11::sIntroStruct2.PName[0] && MK11::sIntroStruct2.PChar[0] && MK11::sIntroStruct2.PName2[0] && MK11::sIntroStruct2.PChar2[0])
 				{
 					ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), "Active");
 				}
@@ -142,20 +142,20 @@ void MK11Menu::Draw()
 			ImGui::Separator();
 
 		}
-		if (sActiveMods.bIntroSwap)
+		if (MK11::sActiveMods.bIntroSwap)
 		{
-			ImGui::Checkbox("Swap P1", &sIntroStruct.bEnabled);
+			ImGui::Checkbox("Swap P1", &MK11::sIntroStruct.bEnabled);
 
 			ImGui::PushItemWidth(200);
-			if (ImGui::BeginCombo("Char1", sIntroStruct.PName))
+			if (ImGui::BeginCombo("Char1", MK11::sIntroStruct.PName))
 			{
 				for (auto i = MK11::sCharacters.cbegin(); i != MK11::sCharacters.cend(); i++)
 				{
-					bool is_selected = (sIntroStruct.PName == i->name.c_str());
+					bool is_selected = (MK11::sIntroStruct.PName == i->name.c_str());
 					if (ImGui::Selectable(i->name.c_str(), is_selected))
 					{
-						//sprintf(sIntroStruct.PName, toUpper(i->name).c_str());
-						sprintf(sIntroStruct.PName, i->name.c_str());
+						//sprintf(MK11::sIntroStruct.PName, toUpper(i->name).c_str());
+						sprintf(MK11::sIntroStruct.PName, i->name.c_str());
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -165,16 +165,16 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 			ImGui::SameLine();
 			ImGui::PushItemWidth(40);
-			if (ImGui::BeginCombo("Ltr1", sIntroStruct.PChar))
+			if (ImGui::BeginCombo("Ltr1", MK11::sIntroStruct.PChar))
 			{
-				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), sIntroStruct.PName);
+				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct.PName);
 				for (int j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
-					bool is_selected = (sIntroStruct.PChar == t);
+					bool is_selected = (MK11::sIntroStruct.PChar == t);
 					if (ImGui::Selectable(t, is_selected))
 					{
-						sprintf(sIntroStruct.PChar, t);
+						sprintf(MK11::sIntroStruct.PChar, t);
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -184,14 +184,14 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 
 			ImGui::PushItemWidth(200);
-			if (ImGui::BeginCombo("sChar1", sIntroStruct.PName2))
+			if (ImGui::BeginCombo("sChar1", MK11::sIntroStruct.PName2))
 			{
 				for (auto i = MK11::sCharacters.cbegin(); i != MK11::sCharacters.cend(); i++)
 				{
-					bool is_selected = (sIntroStruct.PName2 == i->name.c_str()); // From Above
+					bool is_selected = (MK11::sIntroStruct.PName2 == i->name.c_str()); // From Above
 					if (ImGui::Selectable(i->name.c_str(), is_selected))
 					{
-						sprintf(sIntroStruct.PName2, i->name.c_str());
+						sprintf(MK11::sIntroStruct.PName2, i->name.c_str());
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -201,16 +201,16 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 			ImGui::SameLine();
 			ImGui::PushItemWidth(40);
-			if (ImGui::BeginCombo("sLtr1", sIntroStruct.PChar2))
+			if (ImGui::BeginCombo("sLtr1", MK11::sIntroStruct.PChar2))
 			{
-				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), sIntroStruct.PName2);
+				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct.PName2);
 				for (int j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
-					bool is_selected = (sIntroStruct.PChar2 == t);
+					bool is_selected = (MK11::sIntroStruct.PChar2 == t);
 					if (ImGui::Selectable(t, is_selected))
 					{
-						sprintf(sIntroStruct.PChar2, t);
+						sprintf(MK11::sIntroStruct.PChar2, t);
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -220,27 +220,27 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 
 			///////////////////////
-			ImGui::Checkbox("Swap P2", &sIntroStruct2.bEnabled);
+			ImGui::Checkbox("Swap P2", &MK11::sIntroStruct2.bEnabled);
 			ImGui::SameLine();
 			if (ImGui::Button("Mirror Swap"))
 			{
-				sprintf(sIntroStruct2.PName, sIntroStruct.PName2);
-				sprintf(sIntroStruct2.PName2, sIntroStruct.PName);
-				sprintf(sIntroStruct2.PChar, sIntroStruct.PChar);
-				sprintf(sIntroStruct2.PChar2, sIntroStruct.PChar2);
+				sprintf(MK11::sIntroStruct2.PName, MK11::sIntroStruct.PName2);
+				sprintf(MK11::sIntroStruct2.PName2, MK11::sIntroStruct.PName);
+				sprintf(MK11::sIntroStruct2.PChar, MK11::sIntroStruct.PChar);
+				sprintf(MK11::sIntroStruct2.PChar2, MK11::sIntroStruct.PChar2);
 
 			}
 
 			ImGui::PushItemWidth(200);
-			if (ImGui::BeginCombo("Char2", sIntroStruct2.PName))
+			if (ImGui::BeginCombo("Char2", MK11::sIntroStruct2.PName))
 			{
 				for (auto i = MK11::sCharacters.cbegin(); i != MK11::sCharacters.cend(); i++)
 				{
-					bool is_selected = (sIntroStruct2.PName == i->name.c_str());
+					bool is_selected = (MK11::sIntroStruct2.PName == i->name.c_str());
 					if (ImGui::Selectable(i->name.c_str(), is_selected))
 					{
-						//sprintf(sIntroStruct.PName, toUpper(i->name).c_str());
-						sprintf(sIntroStruct2.PName, i->name.c_str());
+						//sprintf(MK11::sIntroStruct.PName, toUpper(i->name).c_str());
+						sprintf(MK11::sIntroStruct2.PName, i->name.c_str());
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -250,17 +250,17 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 			ImGui::SameLine();
 			ImGui::PushItemWidth(40);
-			if (ImGui::BeginCombo("Ltr2", sIntroStruct2.PChar))
+			if (ImGui::BeginCombo("Ltr2", MK11::sIntroStruct2.PChar))
 			{
 
-				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), sIntroStruct2.PName);
+				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct2.PName);
 				for (int j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
-					bool is_selected = (sIntroStruct2.PChar == t);
+					bool is_selected = (MK11::sIntroStruct2.PChar == t);
 					if (ImGui::Selectable(t, is_selected))
 					{
-						sprintf(sIntroStruct2.PChar, t);
+						sprintf(MK11::sIntroStruct2.PChar, t);
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -270,14 +270,14 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 
 			ImGui::PushItemWidth(200);
-			if (ImGui::BeginCombo("sChar2", sIntroStruct2.PName2))
+			if (ImGui::BeginCombo("sChar2", MK11::sIntroStruct2.PName2))
 			{
 				for (auto i = MK11::sCharacters.cbegin(); i != MK11::sCharacters.cend(); i++)
 				{
-					bool is_selected = (sIntroStruct2.PName2 == i->name.c_str());
+					bool is_selected = (MK11::sIntroStruct2.PName2 == i->name.c_str());
 					if (ImGui::Selectable(i->name.c_str(), is_selected))
 					{
-						sprintf(sIntroStruct2.PName2, i->name.c_str());
+						sprintf(MK11::sIntroStruct2.PName2, i->name.c_str());
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -287,17 +287,17 @@ void MK11Menu::Draw()
 			ImGui::PopItemWidth();
 			ImGui::SameLine();
 			ImGui::PushItemWidth(40);
-			if (ImGui::BeginCombo("sLtr2", sIntroStruct2.PChar2))
+			if (ImGui::BeginCombo("sLtr2", MK11::sIntroStruct2.PChar2))
 			{
 
-				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), sIntroStruct2.PName2);
+				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct2.PName2);
 				for (int j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
-					bool is_selected = (sIntroStruct2.PChar2 == t);
+					bool is_selected = (MK11::sIntroStruct2.PChar2 == t);
 					if (ImGui::Selectable(t, is_selected))
 					{
-						sprintf(sIntroStruct2.PChar2, t);
+						sprintf(MK11::sIntroStruct2.PChar2, t);
 					}
 					if (is_selected)
 						ImGui::SetItemDefaultFocus();
@@ -311,7 +311,7 @@ void MK11Menu::Draw()
 		ImGui::Separator();
 		ImGui::Text("File Swaps Status:");
 		ImGui::SameLine();
-		if (sActiveMods.bModLoader)
+		if (MK11::sActiveMods.bModLoader)
 		{
 			while (MK11::vSwappedFiles.size() > SettingsMgr->iLogSize)
 			{
@@ -348,9 +348,9 @@ void MK11Menu::Draw()
 	else if (iCurrentTab == eTabs::ANTICHEAT)
 	{
 		ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-		ImGui::Checkbox("Cheat Engine Detection", &sActiveMods.bAntiCheatEngine);
-		ImGui::Checkbox("Content Validation Check 1 (exe)", &sActiveMods.bAntiCVD1);
-		ImGui::Checkbox("Content Validation Check 2 (ContentValidationData.txt)", &sActiveMods.bAntiCVD2);
+		ImGui::Checkbox("Cheat Engine Detection", &MK11::sActiveMods.bAntiCheatEngine);
+		ImGui::Checkbox("Content Validation Check 1 (exe)", &MK11::sActiveMods.bAntiCVD1);
+		ImGui::Checkbox("Content Validation Check 2 (ContentValidationData.txt)", &MK11::sActiveMods.bAntiCVD2);
 		ImGui::PopItemFlag();
 	}
 	else if (iCurrentTab == eTabs::CHEATS)
@@ -368,12 +368,12 @@ void MK11Menu::Draw()
 				ImVec4* vPtr = &v4Disabled;
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpMercy)
+				if (MK11::sCheatsStruct.lpMercy)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "1.\tPerform Mercy Any Time.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bMercy)
+				if (MK11::sCheatsStruct.bMercy)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -381,12 +381,12 @@ void MK11Menu::Draw()
 				}
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpGround)
+				if (MK11::sCheatsStruct.lpGround)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "2.\tPerform Ground Moves Any Time.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bGround)
+				if (MK11::sCheatsStruct.bGround)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -394,12 +394,12 @@ void MK11Menu::Draw()
 				}
 				
 				ImGui::Bullet();
-				if (sCheatsStruct.lpBrut)
+				if (MK11::sCheatsStruct.lpBrut)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "3.\tNo Brutality Requirements.\n\tPerform Brutality Anytime.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bBrut)
+				if (MK11::sCheatsStruct.bBrut)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -407,12 +407,12 @@ void MK11Menu::Draw()
 				}
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpMeteor)
+				if (MK11::sCheatsStruct.lpMeteor)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "4.\tTowers of Time Meteor Always Spawns.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bMeteor)
+				if (MK11::sCheatsStruct.bMeteor)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -420,12 +420,12 @@ void MK11Menu::Draw()
 				}
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpDizzy)
+				if (MK11::sCheatsStruct.lpDizzy)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "5.\tAlways Allow FinishHim.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bDizzy)
+				if (MK11::sCheatsStruct.bDizzy)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -433,12 +433,12 @@ void MK11Menu::Draw()
 				}
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpFatCombo)
+				if (MK11::sCheatsStruct.lpFatCombo)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "6.\tAllow Non-Chain combos in FinishHim.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bFatCombo)
+				if (MK11::sCheatsStruct.bFatCombo)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -446,12 +446,12 @@ void MK11Menu::Draw()
 				}
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpNoBlock)
+				if (MK11::sCheatsStruct.lpNoBlock)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "7.\tBlocking Disabled.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bNoBlock)
+				if (MK11::sCheatsStruct.bNoBlock)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{
@@ -459,12 +459,12 @@ void MK11Menu::Draw()
 				}
 
 				ImGui::Bullet();
-				if (sCheatsStruct.lpFatalBlow)
+				if (MK11::sCheatsStruct.lpFatalBlow)
 					vPtr = &v4Enabled;
 				ImGui::TextColored(*vPtr, "8.\tAllow Fatal Blow at Full Health.");
 				vPtr = &v4Disabled;
 				ImGui::SameLine();
-				if (sCheatsStruct.bFatalBlow)
+				if (MK11::sCheatsStruct.bFatalBlow)
 					ImGui::TextColored(v4Enabled, "On");
 				else
 				{

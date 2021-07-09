@@ -168,9 +168,9 @@ LibMap ParsePEHeader()
 	PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)GetModuleHandleA(NULL);
 	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)RVAtoLP((PBYTE)pDosHeader, pDosHeader->e_lfanew);
 	if (pNTHeader->Signature != IMAGE_NT_SIGNATURE)
-		throw(-1);
+		throw(-1); // Not an EXE
 
-	std::map<std::string, FuncMap> IAT{};
+	LibMap IAT{};
 
 	PIMAGE_IMPORT_DESCRIPTOR pImportDesc = (PIMAGE_IMPORT_DESCRIPTOR)RVAtoLP(pDosHeader, pNTHeader->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress);
 
@@ -178,7 +178,7 @@ LibMap ParsePEHeader()
 	{
 		std::string szLibrary = (char*)RVAtoLP(pDosHeader, pImportDesc[i].Name);
 		if (!pImportDesc[i].FirstThunk || !pImportDesc[i].OriginalFirstThunk)
-			throw(-1);
+			continue;
 
 		PIMAGE_THUNK_DATA pThunk = (PIMAGE_THUNK_DATA)RVAtoLP(pDosHeader, pImportDesc[i].FirstThunk);
 		PIMAGE_THUNK_DATA pOrigThunk = (PIMAGE_THUNK_DATA)RVAtoLP(pDosHeader, pImportDesc[i].OriginalFirstThunk);
@@ -200,4 +200,79 @@ LibMap ParsePEHeader()
 
 	return IAT;
 
+}
+
+int StringToVK(std::string sKey)
+{
+	for (auto& c : sKey) c = toupper(c); // To Upper sKey
+
+	if (sKey == "SHIFT")
+	{
+		return VK_SHIFT;
+	}
+
+	if (sKey == "TAB")
+	{
+		return VK_TAB;
+	}
+
+	if (sKey == "SPACE")
+	{
+		return VK_SPACE;
+	}
+
+	if (sKey == "ALT")
+	{
+		return VK_MENU;
+	}
+
+	if (sKey.substr(0, 6) == "NUMPAD") // Numpad
+	{
+		char cLast = sKey[6];
+		switch (cLast)
+		{
+		case '+':
+			return VK_ADD;
+		case '-':
+			return VK_SUBTRACT;
+		case 'E': //NUMPAD Enter
+			return VK_RETURN;
+		case '*':
+			return VK_MULTIPLY;
+		case '/':
+			return VK_DIVIDE;
+		default:
+			return cLast + 0x30; // NUMPAD Number
+		}
+
+	}
+	if (sKey.length() == 1)
+	{
+		if (sKey[0] >= '0' && sKey[0] <= 'Z' && sKey[0] != 0x40) // Letter or Number. 0x40 is not available which is @
+			return sKey[0]; // Letters and Numbers' VK are their ASCII Repr
+		if (sKey[0] == '/' || sKey[0] == '?')
+			return VK_OEM_2;
+		if (sKey[0] == '-')
+			return VK_OEM_MINUS;
+		if (sKey[0] == '+')
+			return VK_OEM_PLUS;
+		if (sKey[0] == '`' || sKey[0] == '~')
+			return VK_OEM_3;
+	}
+
+	if (sKey[0] == 'F' && sKey.length() > 1 && sKey.length() <= 3) // F1-F12 buttons
+	{
+		std::string digits = sKey.substr(1, sKey.length() - 1).c_str();
+		return std::stoi(digits.c_str()) + 0x70 - 1;
+	}
+
+	// Arrows
+	if (sKey == "DOWN")
+		return VK_DOWN;
+	if (sKey == "UP")
+		return VK_UP;
+	if (sKey == "LEFT")
+		return VK_LEFT;
+	if (sKey == "RIGHT")
+		return VK_RIGHT;
 }
