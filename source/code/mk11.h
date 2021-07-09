@@ -1,32 +1,34 @@
 #pragma once
 #include "mk11utils.h"
 #include "mk11menu.h"
+#include "../utils/cppython.h"
 
-enum  PLAYER_NUM
+enum PLAYER_NUM
 {
-	INVALID_PLAYER_NUM = 0xFFFFFFFF,
-	PLAYER1 = 0x0,
+	INVALID_PLAYER_NUM			= 0xFFFFFFFF,
+	PLAYER1						= 0x0,
 	PLAYER2,
 	PLAYER3,
 	PLAYER4,
 	MAX_PLAYERS,
-	CPU_PLAYER = 0x5,
-	NOT_CPU_PLAYER = 0x6,
-	BACKGROUND_PLAYER = 0x7,
+	CPU_PLAYER					= 0x5,
+	NOT_CPU_PLAYER				= 0x6,
+	BACKGROUND_PLAYER			= 0x7,
 };
 
 enum MOD_HOOK_STATUS
 {
-	SUCCESS = 0,
-	DISABLED,
-	NOT_SPECIFIED,
-	NOT_FOUND
+	DISABLED					= -1,
+	SUCCESS						,
+	NOT_SPECIFIED				,
+	NOT_FOUND					,
 };
 
 namespace MK11 {
 
+	// Structs
 	struct CamStruct {
-		bool bLogCam = false; //Make it a flag to control prints
+		bool bLogCam = false;
 		bool bTimestopActive = false;
 		bool bTimestopEnabled = false;
 	};
@@ -42,14 +44,6 @@ namespace MK11 {
 		uint8_t intros=0;
 	};
 
-	bool operator==(const CharacterStruct& s1, std::string s2);
-
-	extern std::vector<CharacterStruct> sCharacters;
-	extern uint8_t ulCharactersCount;
-	extern uint64_t* lpGameVersion;
-	extern uint64_t* lpGameVersionFull;
-	void PopulateCharList();
-
 	struct ActiveMods {
 		bool bIntroSwap = false;
 		bool bAntiCheatEngine = false;
@@ -63,17 +57,43 @@ namespace MK11 {
 		bool bMercy = false, bGround = false, bBrut = false, bBrutB = false, bMeteor = false, bDizzy = false, bFatality = false, bFatCombo = false, bNoBlock = false, bFatalBlow = false;
 	};
 
-	extern std::vector<std::wstring> vSwappedFiles;
+	struct LibFuncStruct {
+		std::string FullName;
+		std::string LibName;
+		std::string ProcName;
+	};
 
+	struct LibMapsStruct {
+		LibFuncStruct ModLoader;
+		LibFuncStruct AntiCheatEngine;
+	};
+	
+	// Vars
+	extern std::vector<CharacterStruct> sCharacters;
+	extern uint8_t ulCharactersCount;
+	extern uint64_t* lpGameVersion;
+	extern uint64_t* lpGameVersionFull;
+	extern std::vector<std::wstring> vSwappedFiles;
+	extern LibMap IAT;
+	// StructVars
+	extern CamStruct sCamStruct;
+	extern IntroStruct sIntroStruct;
+	extern IntroStruct sIntroStruct2;
+	extern ActiveMods sActiveMods;
+	extern CheatsStruct sCheatsStruct;
+	extern LibMapsStruct sLFS;
+	
+
+	// Functions
 	std::string GetGameVersion();
 	std::string GetGameVersionFull();
-
+	void PopulateCharList();
+	bool operator==(const CharacterStruct& s1, std::string s2);
+	//LFS
+	LibFuncStruct ParseLibFunc(CPPython::string);
+	void ParseLibFunc(LibFuncStruct&);
+	uint64_t* GetLibProcFromNT(const LibFuncStruct&);
 }
-
-extern MK11::CamStruct sCamStruct;
-extern MK11::IntroStruct sIntroStruct, sIntroStruct2;
-extern MK11::ActiveMods sActiveMods;
-extern MK11::CheatsStruct sCheatsStruct;
 
 
 namespace MK11Hooks {

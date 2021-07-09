@@ -2,13 +2,16 @@
 #include "mk11.h"
 #include <filesystem>
 
-MK11::CamStruct sCamStruct;
-MK11::IntroStruct sIntroStruct, sIntroStruct2;
-MK11::ActiveMods sActiveMods;
-MK11::CheatsStruct sCheatsStruct;
+MK11::CamStruct MK11::sCamStruct;
+MK11::IntroStruct MK11::sIntroStruct, MK11::sIntroStruct2;
+MK11::ActiveMods MK11::sActiveMods;
+MK11::CheatsStruct MK11::sCheatsStruct;
 std::vector<std::wstring> MK11::vSwappedFiles;
+MK11::LibMapsStruct MK11::sLFS;
 uint64_t* MK11::lpGameVersionFull = nullptr;
 uint64_t* MK11::lpGameVersion = nullptr;
+LibMap MK11::IAT{};
+
 
 bool MK11::operator==(const MK11::CharacterStruct& s1, std::string s2)
 {
@@ -68,23 +71,23 @@ void MK11Hooks::IntroSwap(char* dest, char* source, uint64_t length)
 	char* p1_string;
 	char* p1_string_replace;
 	bool found = false;
-	if (sIntroStruct.bEnabled && sIntroStruct.PName[0] && sIntroStruct.PChar[0] && sIntroStruct.PName2[0] && sIntroStruct.PChar2[0]) // Populated
+	if (MK11::sIntroStruct.bEnabled && MK11::sIntroStruct.PName[0] && MK11::sIntroStruct.PChar[0] && MK11::sIntroStruct.PName2[0] && MK11::sIntroStruct.PChar2[0]) // Populated
 	{
-		p1_string = new char[strlen(sIntroStruct.PName) + 25 + 1]; // 1 Null Terminator
-		sprintf(p1_string, "%s_%c_CHARINTRO_SCRIPTASSETS", sIntroStruct.PName, sIntroStruct.PChar[0]);
-		if (sIntroStruct.PName == "*")
+		p1_string = new char[strlen(MK11::sIntroStruct.PName) + 25 + 1]; // 1 Null Terminator
+		sprintf(p1_string, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct.PName, MK11::sIntroStruct.PChar[0]);
+		if (MK11::sIntroStruct.PName == "*")
 		{
 			// Get Name Here
 		}
-		if (sIntroStruct.PChar[0] == '*')
+		if (MK11::sIntroStruct.PChar[0] == '*')
 		{
 			// Get Letter Here
 		}
 
 		if (!strcmp(p1_string, source)) // Found the string I want to replace
 		{
-			p1_string_replace = new char[strlen(sIntroStruct.PName2) + 25 + 1]; // 1 Null Terminator
-			sprintf(p1_string_replace, "%s_%c_CHARINTRO_SCRIPTASSETS", sIntroStruct.PName2, sIntroStruct.PChar2[0]);
+			p1_string_replace = new char[strlen(MK11::sIntroStruct.PName2) + 25 + 1]; // 1 Null Terminator
+			sprintf(p1_string_replace, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct.PName2, MK11::sIntroStruct.PChar2[0]);
 			std::cout << "IntroSwap::Swapping " << source << " <-> " << p1_string_replace << std::endl;
 			source = p1_string_replace;
 			found = true;
@@ -93,23 +96,23 @@ void MK11Hooks::IntroSwap(char* dest, char* source, uint64_t length)
 
 	char* p2_string;
 	char* p2_string_replace;
-	if (!found && sIntroStruct2.bEnabled && sIntroStruct2.PName[0] && sIntroStruct2.PChar[0] && sIntroStruct2.PName2[0] && sIntroStruct2.PChar2[0]) // Populated
+	if (!found && MK11::sIntroStruct2.bEnabled && MK11::sIntroStruct2.PName[0] && MK11::sIntroStruct2.PChar[0] && MK11::sIntroStruct2.PName2[0] && MK11::sIntroStruct2.PChar2[0]) // Populated
 	{
-		p2_string = new char[strlen(sIntroStruct2.PName) + 25 + 1]; // 1 Null Terminator
-		sprintf(p2_string, "%s_%c_CHARINTRO_SCRIPTASSETS", sIntroStruct2.PName, sIntroStruct2.PChar[0]);
-		if (sIntroStruct2.PName == "*")
+		p2_string = new char[strlen(MK11::sIntroStruct2.PName) + 25 + 1]; // 1 Null Terminator
+		sprintf(p2_string, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct2.PName, MK11::sIntroStruct2.PChar[0]);
+		if (MK11::sIntroStruct2.PName == "*")
 		{
 			// Get Name Here
 		}
-		if (sIntroStruct2.PChar[0] == '*')
+		if (MK11::sIntroStruct2.PChar[0] == '*')
 		{
 			// Get Letter Here
 		}
 
 		if (!strcmp(p2_string, source)) // Found the string I want to replace
 		{
-			p2_string_replace = new char[strlen(sIntroStruct2.PName2) + 25 + 1]; // 1 Null Terminator
-			sprintf(p2_string_replace, "%s_%c_CHARINTRO_SCRIPTASSETS", sIntroStruct2.PName2, sIntroStruct2.PChar2[0]);
+			p2_string_replace = new char[strlen(MK11::sIntroStruct2.PName2) + 25 + 1]; // 1 Null Terminator
+			sprintf(p2_string_replace, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct2.PName2, MK11::sIntroStruct2.PChar2[0]);
 			std::cout << "IntroSwap::Swapping " << source << " <-> " << p2_string_replace << std::endl;
 			source = p2_string_replace;
 		}
@@ -124,7 +127,7 @@ void MK11Hooks::TimestopFunction(uint64_t somePtr, uint32_t rvalue)
 {
 	uint64_t rax = *(uint64_t*)(somePtr);
 
-	if (!sCamStruct.bTimestopActive)
+	if (!MK11::sCamStruct.bTimestopActive)
 		rvalue = *(uint32_t*)(somePtr + 0x18);
 
 	if (*(uint32_t*)(somePtr + 0x14) == rvalue)
@@ -203,3 +206,30 @@ std::string MK11::GetGameVersionFull()
 	}
 	return reinterpret_cast<char*>(*ptr);
 };
+
+MK11::LibFuncStruct MK11::ParseLibFunc(CPPython::string path)
+{
+	MK11::LibFuncStruct LFS;
+	auto vars = path.rsplit(".", 1);
+
+	if (vars.size() != 2)
+		throw (-1);
+	
+	LFS.FullName = path;
+	LFS.LibName = vars[0].lower();
+	LFS.ProcName = vars[1];
+
+	LFS.LibName = CPPython::string(LFS.LibName).endswith(".dll") || CPPython::string(LFS.LibName).endswith(".exe") ? LFS.LibName : LFS.LibName + ".dll";
+
+	return LFS;
+}
+
+void MK11::ParseLibFunc(MK11::LibFuncStruct& LFS)
+{
+	LFS = ParseLibFunc(LFS.FullName);
+}
+
+uint64_t* MK11::GetLibProcFromNT(const MK11::LibFuncStruct& LFS)
+{
+	return (uint64_t*)IAT[LFS.LibName][LFS.ProcName];
+}
