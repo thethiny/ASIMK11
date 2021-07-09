@@ -8,12 +8,17 @@
 using namespace Memory::VP;
 using namespace hook;
 
-LibMap IAT{};
+
 Trampoline* GameTramp, * User32Tramp;
 
-void UnlockerPipe();
+void CreateConsole(bool = false);
+void HooksMain();
+void SyncAwait(std::string(*)(void), const char*, bool = false);
 void BlockerEvents();
-void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
+void PreGameHooks();
+void UnlockerPipe();
+void ProcessSettings();
+void OnInitializeHook();
 
 LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 {
@@ -30,10 +35,10 @@ LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 				GuiMenu->ToggleActive();
 			}
 
-			if (sCamStruct.bTimestopEnabled && wParam == (SettingsMgr->iVKtimestop))
+			if (MK11::sCamStruct.bTimestopEnabled && wParam == (SettingsMgr->iVKtimestop))
 			{
-				sCamStruct.bTimestopActive = !sCamStruct.bTimestopActive;
-				if (sCamStruct.bTimestopActive)
+				MK11::sCamStruct.bTimestopActive = !MK11::sCamStruct.bTimestopActive;
+				if (MK11::sCamStruct.bTimestopActive)
 				{
 					std::cout << "TimeStop::On" << std::endl;
 				}
@@ -57,159 +62,159 @@ LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 			{
 				if (GetAsyncKeyState(SettingsMgr->iVKCheats)) // Button Down
 				{
-					if (wParam == '1' && sCheatsStruct.lpMercy)
+					if (wParam == '1' && MK11::sCheatsStruct.lpMercy)
 					{
 						std::cout << "pMercyAnyTime ";
-						if (sCheatsStruct.bMercy)
+						if (MK11::sCheatsStruct.bMercy)
 						{
 							std::cout << "Disabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMercy), 0x5340); // push rbx // Change this to read it automatically from memory, or verify against a hash or something
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpMercy) + 2), 0x48);
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpMercy), 0x5340); // push rbx // Change this to read it automatically from memory, or verify against a hash or something
+							Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpMercy) + 2), 0x48);
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMercy), 0x01B0); // mov al, 1
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpMercy) + 2), 0xC3);
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpMercy), 0x01B0); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpMercy) + 2), 0xC3);
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bMercy = !sCheatsStruct.bMercy;
+						MK11::sCheatsStruct.bMercy = !MK11::sCheatsStruct.bMercy;
 					}
-					if (wParam == '2' && sCheatsStruct.lpGround)
+					if (wParam == '2' && MK11::sCheatsStruct.lpGround)
 					{
 						std::cout << "pNoGroundReq ";
-						if (sCheatsStruct.bGround)
+						if (MK11::sCheatsStruct.bGround)
 						{
 							std::cout << "Disabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpGround), 0x5340); // mov al, 1
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpGround) + 2), 0x48);
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpGround), 0x5340); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpGround) + 2), 0x48);
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpGround), 0x01B0); // mov al, 1
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpGround) + 2), 0xC3);
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpGround), 0x01B0); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpGround) + 2), 0xC3);
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bGround = !sCheatsStruct.bGround;
+						MK11::sCheatsStruct.bGround = !MK11::sCheatsStruct.bGround;
 					}
-					if (wParam == '3' && sCheatsStruct.lpBrut)
+					if (wParam == '3' && MK11::sCheatsStruct.lpBrut)
 					{
 						std::cout << "pNoBrutalityReq ";
-						if (sCheatsStruct.bBrut)
+						if (MK11::sCheatsStruct.bBrut)
 						{
 							std::cout << "Disabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrut), 0x8948);
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrut) + 2), 0x6C);
-							if (sCheatsStruct.lpBrutB)
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpBrut), 0x8948);
+							Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpBrut) + 2), 0x6C);
+							if (MK11::sCheatsStruct.lpBrutB)
 							{
-								Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrutB), 0x5340);
-								Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrutB) + 2), 0x48);
+								Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpBrutB), 0x5340);
+								Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpBrutB) + 2), 0x48);
 							}
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrut), 0x01B0); // mov al, 1
-							Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrut) + 2), 0xC3);
-							if (sCheatsStruct.lpBrutB)
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpBrut), 0x01B0); // mov al, 1
+							Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpBrut) + 2), 0xC3);
+							if (MK11::sCheatsStruct.lpBrutB)
 							{
-								Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpBrutB), 0x01B0); // mov al, 1
-								Patch<uint8_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpBrutB) + 2), 0xC3);
+								Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpBrutB), 0x01B0); // mov al, 1
+								Patch<uint8_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpBrutB) + 2), 0xC3);
 							}
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bBrut = !sCheatsStruct.bBrut;
+						MK11::sCheatsStruct.bBrut = !MK11::sCheatsStruct.bBrut;
 					}
-					if (wParam == '4' && sCheatsStruct.lpMeteor)
+					if (wParam == '4' && MK11::sCheatsStruct.lpMeteor)
 					{
 						std::cout << "pMeteorAlwaysSpawns ";
-						if (sCheatsStruct.bMeteor)
+						if (MK11::sCheatsStruct.bMeteor)
 						{
 							std::cout << "Disabled";
-							Patch<uint16_t>(GetGameAddr((uint64_t)sCheatsStruct.lpMeteor), 0x1C75); // jne +1E
+							Patch<uint16_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpMeteor), 0x1C75); // jne +1E
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Nop(GetGameAddr((uint64_t)sCheatsStruct.lpMeteor), 2);
+							Nop(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpMeteor), 2);
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bMeteor = !sCheatsStruct.bMeteor;
+						MK11::sCheatsStruct.bMeteor = !MK11::sCheatsStruct.bMeteor;
 					}
-					if (wParam == '5' && sCheatsStruct.lpDizzy && sCheatsStruct.lpFatality)
+					if (wParam == '5' && MK11::sCheatsStruct.lpDizzy && MK11::sCheatsStruct.lpFatality)
 					{
 						std::cout << "pFatalityAlwaysAvailable ";
-						if (sCheatsStruct.bDizzy)
+						if (MK11::sCheatsStruct.bDizzy)
 						{
 							std::cout << "Disabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpDizzy), 0x24748948); // mov [rsp+10],rsi
-							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpDizzy) + 4), 0x48571024); // push rdi / sub rsp, 20
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpDizzy), 0x24748948); // mov [rsp+10],rsi
+							Patch<uint64_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpDizzy) + 4), 0x48571024); // push rdi / sub rsp, 20
 
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpDizzy), 0x83485340);
-							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpDizzy) + 4), 0x8B4820EC);
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpDizzy), 0x83485340);
+							Patch<uint64_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpDizzy) + 4), 0x8B4820EC);
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpDizzy), 0x1C0C748); // mov rax, 1
-							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpDizzy) + 4), 0xC3000000); // ret
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpDizzy), 0x1C0C748); // mov rax, 1
+							Patch<uint64_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpDizzy) + 4), 0xC3000000); // ret
 
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatality), 0x1C0C748);
-							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpFatality) + 4), 0xC3000000);
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpFatality), 0x1C0C748);
+							Patch<uint64_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpFatality) + 4), 0xC3000000);
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bFatality = sCheatsStruct.bDizzy = !sCheatsStruct.bDizzy;
+						MK11::sCheatsStruct.bFatality = MK11::sCheatsStruct.bDizzy = !MK11::sCheatsStruct.bDizzy;
 					}
-					if (wParam == '6' && sCheatsStruct.lpFatCombo)
+					if (wParam == '6' && MK11::sCheatsStruct.lpFatCombo)
 					{
 						std::cout << "pComboInFatality ";
-						if (sCheatsStruct.bFatCombo)
+						if (MK11::sCheatsStruct.bFatCombo)
 						{
 							std::cout << "Disabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatCombo), 0x28EC8348);
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpFatCombo), 0x28EC8348);
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatCombo), 0xC3C03148); // xor rax, rax / ret
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpFatCombo), 0xC3C03148); // xor rax, rax / ret
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bFatCombo = !sCheatsStruct.bFatCombo;
+						MK11::sCheatsStruct.bFatCombo = !MK11::sCheatsStruct.bFatCombo;
 					}
-					if (wParam == '7' && sCheatsStruct.lpNoBlock)
+					if (wParam == '7' && MK11::sCheatsStruct.lpNoBlock)
 					{
 						std::cout << "pBlockingDisabled ";
-						if (sCheatsStruct.bNoBlock)
+						if (MK11::sCheatsStruct.bNoBlock)
 						{
 							std::cout << "Disabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpNoBlock), 0x245C8948);
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpNoBlock), 0x245C8948);
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpNoBlock), 0xC3C03148); // xor rax, rax / ret
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpNoBlock), 0xC3C03148); // xor rax, rax / ret
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bNoBlock = !sCheatsStruct.bNoBlock;
+						MK11::sCheatsStruct.bNoBlock = !MK11::sCheatsStruct.bNoBlock;
 					}
-					if (wParam == '8' && sCheatsStruct.lpFatalBlow)
+					if (wParam == '8' && MK11::sCheatsStruct.lpFatalBlow)
 					{
 						std::cout << "pFatalBlowAtMaxHealth ";
-						if (sCheatsStruct.bFatalBlow)
+						if (MK11::sCheatsStruct.bFatalBlow)
 						{
 							std::cout << "Disabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatalBlow), 0xA9058B48);
-							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpFatalBlow) + 4), 0x8302ED78);
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpFatalBlow), 0xA9058B48);
+							Patch<uint64_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpFatalBlow) + 4), 0x8302ED78);
 						}
 						else
 						{
 							std::cout << "Enabled";
-							Patch<uint64_t>(GetGameAddr((uint64_t)sCheatsStruct.lpFatalBlow), 0x1C0C748); // mov rax, 1
-							Patch<uint64_t>(GetGameAddr(((uint64_t)sCheatsStruct.lpFatalBlow) + 4), 0xC3000000); // ret
+							Patch<uint64_t>(GetGameAddr((uint64_t)MK11::sCheatsStruct.lpFatalBlow), 0x1C0C748); // mov rax, 1
+							Patch<uint64_t>(GetGameAddr(((uint64_t)MK11::sCheatsStruct.lpFatalBlow) + 4), 0xC3000000); // ret
 						}
 						std::cout << std::endl;
-						sCheatsStruct.bFatalBlow = !sCheatsStruct.bFatalBlow;
+						MK11::sCheatsStruct.bFatalBlow = !MK11::sCheatsStruct.bFatalBlow;
 					}
 				}
 			}
@@ -218,7 +223,7 @@ LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 	return CallNextHookEx(0, code, wParam, lParam);
 }
 
-void CreateConsole(bool bFreeze = false)
+void CreateConsole(bool bFreeze)
 {
 	AllocConsole();
 	FILE* fNull;
@@ -259,7 +264,7 @@ void HooksMain()
 			std::cout << "Timestop Pattern found at: " << std::hex << lpTimestopPattern << std::endl;
 			InjectHook(GetGameAddr((uint64_t)lpTimestopPattern), GameTramp->Jump(MK11Hooks::TimestopFunction), PATCH_JUMP);
 			std::cout << "Patched TimeStop" << std::dec << std::endl;
-			sCamStruct.bTimestopEnabled = true;
+			MK11::sCamStruct.bTimestopEnabled = true;
 		}
 		else
 		{
@@ -273,12 +278,13 @@ void HooksMain()
 		uint64_t* lpIntroSwap = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pIntroSwap);
 		if (lpIntroSwap != NULL)
 		{
+			std::cout << "Intro Swap Pattern found at: " << std::hex << lpIntroSwap << std::endl;
 			uint64_t fix_len_add = (uint64_t)lpIntroSwap;
 			Patch<uint16_t>(fix_len_add, 0x428d); // lea eax, [rdx+
 			Patch<uint8_t>(fix_len_add + 2, 0x2A); // 0x2A]
 			uint64_t hook_address = fix_len_add + 0x35;
 			InjectHook(hook_address, GameTramp->Jump(MK11Hooks::IntroSwap), PATCH_CALL);
-			sActiveMods.bIntroSwap = true;
+			MK11::sActiveMods.bIntroSwap = true;
 			std::cout << "Patched Anims Loader" << std::endl;
 			MK11::PopulateCharList();
 		}
@@ -291,22 +297,22 @@ void HooksMain()
 	if (SettingsMgr->bEnableCheats)
 	{
 		std::cout << "==bEnableCheats==" << std::endl;
-		SetCheatPattern(SettingsMgr->pMercyAnyTime,				"pMercyAnyTime",			&(sCheatsStruct.lpMercy));
-		SetCheatPattern(SettingsMgr->pNoGroundReq,				"pNoGroundReq",				&(sCheatsStruct.lpGround));
-		SetCheatPattern(SettingsMgr->pNoBrutalityReq,			"pNoBrutalityReq",			&(sCheatsStruct.lpBrut));
-		SetCheatPattern(SettingsMgr->pBrutalityAlwaysCorrect,	"pBrutalityAlwaysCorrect",	&(sCheatsStruct.lpBrutB));
-		SetCheatPattern(SettingsMgr->pMeteorAlwaysSpawns,		"pMeteorAlwaysSpawns",		&(sCheatsStruct.lpMeteor));
-		SetCheatPattern(SettingsMgr->pFatalityAlwaysAvailable,	"pFatalityAlwaysAvailable", &(sCheatsStruct.lpFatality));
-		SetCheatPattern(SettingsMgr->pDizzyAlwaysAvailable,		"pDizzyAlwaysAvailable",	&(sCheatsStruct.lpDizzy));
-		SetCheatPattern(SettingsMgr->pComboInFatality,			"pComboInFatality",			&(sCheatsStruct.lpFatCombo));
-		SetCheatPattern(SettingsMgr->pBlockingDisabled,			"pBlockingDisabled",		&(sCheatsStruct.lpNoBlock));
-		SetCheatPattern(SettingsMgr->pFatalBlowAtMaxHealth,		"pFatalBlowAtMaxHealth",	&(sCheatsStruct.lpFatalBlow));
+		SetCheatPattern(SettingsMgr->pMercyAnyTime,				"pMercyAnyTime",			&(MK11::sCheatsStruct.lpMercy));
+		SetCheatPattern(SettingsMgr->pNoGroundReq,				"pNoGroundReq",				&(MK11::sCheatsStruct.lpGround));
+		SetCheatPattern(SettingsMgr->pNoBrutalityReq,			"pNoBrutalityReq",			&(MK11::sCheatsStruct.lpBrut));
+		SetCheatPattern(SettingsMgr->pBrutalityAlwaysCorrect,	"pBrutalityAlwaysCorrect",	&(MK11::sCheatsStruct.lpBrutB));
+		SetCheatPattern(SettingsMgr->pMeteorAlwaysSpawns,		"pMeteorAlwaysSpawns",		&(MK11::sCheatsStruct.lpMeteor));
+		SetCheatPattern(SettingsMgr->pFatalityAlwaysAvailable,	"pFatalityAlwaysAvailable", &(MK11::sCheatsStruct.lpFatality));
+		SetCheatPattern(SettingsMgr->pDizzyAlwaysAvailable,		"pDizzyAlwaysAvailable",	&(MK11::sCheatsStruct.lpDizzy));
+		SetCheatPattern(SettingsMgr->pComboInFatality,			"pComboInFatality",			&(MK11::sCheatsStruct.lpFatCombo));
+		SetCheatPattern(SettingsMgr->pBlockingDisabled,			"pBlockingDisabled",		&(MK11::sCheatsStruct.lpNoBlock));
+		SetCheatPattern(SettingsMgr->pFatalBlowAtMaxHealth,		"pFatalBlowAtMaxHealth",	&(MK11::sCheatsStruct.lpFatalBlow));
 	}
 
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)BlockerEvents, NULL, NULL, NULL);
 }
 
-void SyncAwait(std::string(*function)(void), const char* string, bool not = false)
+void SyncAwait(std::string(*function)(void), const char* string, bool not)
 {
 	while (function().empty() ^ not);
 	std::cout << string << ": " << function() << std::endl;
@@ -332,13 +338,14 @@ void PreGameHooks()
 		}
 		else
 		{
-			uint64_t* lpPattern = FindPattern(GetModuleHandleA(NULL), "49 63 4C 24 08 85 C9 74 12");
+			uint64_t* lpPattern = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pGameVer);
 			if (!lpPattern)
 			{
 				std::cout << "Couldn't find Game Version Pattern" << std::endl;
 			}
 			else
 			{
+				std::cout << "Game Version Pattern found at: " << std::hex << lpPattern << std::dec << std::endl;
 				lpPattern = (uint64_t*)((uint64_t)(lpPattern)+0xF);
 				uint64_t offset = 0;
 				memcpy(&offset, lpPattern, 4);
@@ -355,7 +362,7 @@ void PreGameHooks()
 		}
 		else
 		{
-			uint64_t* lpPattern = FindPattern(GetModuleHandleA(NULL), "48 89 84 24 ? ? ? ? 4c 8b f1 33 DB 89 5C 24");
+			uint64_t* lpPattern = FindPattern(GetModuleHandleA(NULL), SettingsMgr->pGameVerFull);
 			if (!lpPattern)
 			{
 				std::cout << "Couldn't find Game FullVersion Pattern" << std::endl;
@@ -375,20 +382,21 @@ void PreGameHooks()
 
 		if (SettingsMgr->bModLoader)
 		{
-			IAT = ParsePEHeader();
+			MK11::IAT = ParsePEHeader();
 			std::cout << "==bModLoader==" << std::endl;
-			uint64_t CreateFileW = IAT["kernel32.dll"]["CreateFileW"];
+			uint64_t CreateFileW = (uint64_t)MK11::GetLibProcFromNT(MK11::sLFS.ModLoader);
 			if (!CreateFileW)
 			{
-				std::cout << "Couldn't find CreateFileW in kernel32.dll!";
+				std::cout << "Couldn't find CreateFileW in kernel32.dll!" << std::endl;
 			}
 			else
 			{
 				const char* CFWPattern = HexToString(CreateFileW).c_str();
-				sActiveMods.bModLoader = true;
+				MK11::sActiveMods.bModLoader = true;
 				int32_t patched = 0;
 
-				std::cout << "Patching Kernel32.CreateFileW (" << std::hex << CreateFileW << ")" << std::endl;
+				//std::cout << "Patching " << MK11::GetLibDisplay(MK11::sLFS.ModLoader, CreateFileW) << std::endl;
+				std::cout << "Patching " << MK11::sLFS.ModLoader.LibName << "[" << MK11::sLFS.ModLoader.ProcName << "] (" << std::hex << CreateFileW << ")" << std::endl;
 
 				uint64_t lpPattern = (uint64_t)FindPattern(GetModuleHandleA(NULL), CFWPattern);
 				while (lpPattern)
@@ -411,13 +419,13 @@ void PreGameHooks()
 	if (SettingsMgr->bDisableAntiCheatEngine)
 	{
 		std::cout << "==bDisableAntiCheatEngine==" << std::endl;
-		uint64_t Func = (uint64_t)IAT["user32.dll"]["EnumChildWindows"];
+		uint64_t Func = (uint64_t)MK11::GetLibProcFromNT(MK11::sLFS.AntiCheatEngine);
 		if (Func)
 		{
-			std::cout << "Found at " << std::hex << Func << std::dec << std::endl;
+			std::cout << "Patching " << MK11::sLFS.AntiCheatEngine.LibName << "[" << MK11::sLFS.AntiCheatEngine.ProcName << "] (" << std::hex << Func << ")" << std::endl;
 			Patch(Func, 0xC3);
 			Patch(Func + 1, 0x90909090);
-			sActiveMods.bAntiCheatEngine = true;
+			MK11::sActiveMods.bAntiCheatEngine = true;
 			std::cout << "Anti Cheat Engine Patched" << std::endl;
 		}
 		else
@@ -455,13 +463,13 @@ void PreGameHooks()
 				std::cout << "CVD1 Pattern found at: " << std::hex << lpCVDPattern << std::dec << std::endl;
 				Patch(GetGameAddr(hook_address), (uint16_t)0xC039); // cmp eax, eax
 				Patch(GetGameAddr(hook_address) + 2, (uint16_t)0x9090); // Nop
-				sActiveMods.bAntiCVD1 = true;
+				MK11::sActiveMods.bAntiCVD1 = true;
 				std::cout << "Anti CVD1 Patched" << std::endl;
 
 				hook_address = (uint64_t)lpCVD2Pattern;
 				std::cout << "CVD2 Pattern found at: " << std::hex << lpCVD2Pattern << std::dec << std::endl;
 				Patch(GetGameAddr(hook_address), (uint8_t)0xC3); // ret
-				sActiveMods.bAntiCVD2 = true;
+				MK11::sActiveMods.bAntiCVD2 = true;
 				std::cout << "Anti CVD2 Patched" << std::endl;
 			}
 		}
@@ -531,6 +539,21 @@ void UnlockerPipe()
 
 }
 
+void ProcessSettings()
+{
+	// KeyBinds
+	SettingsMgr->iVKCheats		= StringToVK(SettingsMgr->hkCheats);
+	SettingsMgr->iVKtimestop	= StringToVK(SettingsMgr->hkTimestop);
+	SettingsMgr->iVKMenuToggle	= StringToVK(SettingsMgr->hkMenu);
+	SettingsMgr->iVKMenuInfo	= StringToVK(SettingsMgr->hkInfo);
+
+	// DLL Procs
+	MK11::sLFS.ModLoader		= MK11::ParseLibFunc(SettingsMgr->szModLoader);
+	MK11::sLFS.AntiCheatEngine	= MK11::ParseLibFunc(SettingsMgr->szAntiCheatEngine);
+
+	std::cout << "Parsed Settings" << std::endl;
+}
+
 void OnInitializeHook()
 {
 	std::string expected_process("MK11.exe");
@@ -544,12 +567,13 @@ void OnInitializeHook()
 	}
 
 	SettingsMgr->Init();
+
 	if (SettingsMgr->bEnableConsoleWindow)
 	{
 		CreateConsole(SettingsMgr->bPauseOnStart);
-		std::cout << "Console Created!" << std::endl;
 	}
 
+	ProcessSettings(); // Parse Settings
 	PreGameHooks(); // Queue Blocker
 	CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)HooksMain, NULL, NULL, NULL);
 }
