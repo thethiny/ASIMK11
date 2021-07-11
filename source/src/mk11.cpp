@@ -1,4 +1,3 @@
-#include "..\pch.h"
 #include "mk11.h"
 #include <filesystem>
 
@@ -162,16 +161,16 @@ HANDLE __stdcall MK11Hooks::CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredA
 }
 
 // Unlocker Part
-MK11Hooks::VR2Function* MK11Hooks::procVR2Function = (MK11Hooks::VR2Function*)(GetGameAddr(0x3D9F760));
+MK11Hooks::VR2Function* MK11Hooks::ProcVR2Function = (MK11Hooks::VR2Function*)(GetGameAddr(0x3D9F760));
 
 uint64_t* __fastcall MK11Hooks::VR2Proxy(uint64_t seed, uint64_t* result_hash, const char* to_hash)
 {
-	printf("seed: %X\n", seed);
-	printf("result_hash: %X\n", result_hash);
-	printf("to_hash: %X (%s)\n", to_hash, to_hash);
+	printf("seed: %llX\n", seed);
+	printf("result_hash: %llX\n", (uint64_t)result_hash);
+	printf("to_hash: %llX (%s)\n", (uint64_t)to_hash, to_hash);
 
-	uint64_t* return_value = procVR2Function(0, result_hash, to_hash);
-	printf("hash: %X (%s)\n", return_value, (char*)*return_value);
+	uint64_t* return_value = ProcVR2Function(0, result_hash, to_hash);
+	printf("hash: %llX (%s)\n", (uint64_t)return_value, (char*)*return_value);
 
 	return return_value;
 }
@@ -233,3 +232,31 @@ uint64_t* MK11::GetLibProcFromNT(const MK11::LibFuncStruct& LFS)
 {
 	return (uint64_t*)IAT[LFS.LibName][LFS.ProcName];
 }
+
+MK11Hooks::lpwsThisFunction*	MK11Hooks::ProcGetItemName				= (MK11Hooks::lpwsThisFunction*)	(GetGameAddr(0x140EC0980));
+MK11Hooks::lpwsThisFunction*	MK11Hooks::ProcGetItemPriceString		= (MK11Hooks::lpwsThisFunction*)	(GetGameAddr(0x140EC0980));
+MK11Hooks::ullThisFunction*		MK11Hooks::ProcGetItemPrice				= (MK11Hooks::ullThisFunction*)		(GetGameAddr(0x140722320));
+
+wchar_t* __fastcall MK11Hooks::GetItemName(uint64_t thisptr)
+{
+	wchar_t* name = ProcGetItemName(thisptr);
+	printf("Item[%llX] Name: %ls\n", thisptr, name);
+	name = L"Free Item";
+	return name;
+};
+
+wchar_t* __fastcall MK11Hooks::GetItemPriceString(uint64_t thisptr)
+{
+	wchar_t* price = ProcGetItemPriceString(thisptr);
+	printf("Item[%llX]\tItem Display Price: %ls\n", thisptr, price);
+	price = L"0";
+	return price;
+};
+
+uint64_t __fastcall MK11Hooks::GetItemPrice(uint64_t thisptr)
+{
+	uint64_t price = ProcGetItemPrice(thisptr);
+	printf("Parsed Obj[%llX]\tItem Buy Price: %llu\n", thisptr, price);
+	price = 0;
+	return price;
+};

@@ -33,6 +33,7 @@ uint64_t*		FindPattern(void* handle, std::string_view bytes);
 void			SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern);
 LibMap			ParsePEHeader();
 int				StringToVK(std::string);
+void			RaiseException(const char*, int64_t = 1);
 
 
 template<typename T>

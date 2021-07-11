@@ -1,3 +1,6 @@
 [submodule "source/imgui"]
 	path = source/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "source/utils/CPPython"]
+	path = source/utils/CPPython
+	url = https://github.com/thethiny/CPPython.git

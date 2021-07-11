@@ -1,4 +1,3 @@
-#include "..\pch.h"
 #include "mk11utils.h"
 #include <map>
 
@@ -42,7 +41,6 @@ int64 GetModuleAddr(__int64 addr, const char* name)
 {
 	return GetModuleEntryPoint(name) + addr;
 }
-
 
 
 // Functional Utilities
@@ -168,7 +166,7 @@ LibMap ParsePEHeader()
 	PIMAGE_DOS_HEADER pDosHeader = (PIMAGE_DOS_HEADER)GetModuleHandleA(NULL);
 	PIMAGE_NT_HEADERS pNTHeader = (PIMAGE_NT_HEADERS)RVAtoLP((PBYTE)pDosHeader, pDosHeader->e_lfanew);
 	if (pNTHeader->Signature != IMAGE_NT_SIGNATURE)
-		throw(-1); // Not an EXE
+		RaiseException("NT Signature Failed!", -1); // Not an EXE
 
 	LibMap IAT{};
 
@@ -275,4 +273,13 @@ int StringToVK(std::string sKey)
 		return VK_LEFT;
 	if (sKey == "RIGHT")
 		return VK_RIGHT;
+
+	RaiseException("Button Binding Unsupported!");
+}
+
+void RaiseException(const char* Message, int64_t ErrorCode)
+{
+	std::string ErrorMessage = "Error: " + std::string(Message);
+	MessageBoxA(0, ErrorMessage.c_str(), "Error", MB_ICONERROR);
+	throw(ErrorCode);
 }

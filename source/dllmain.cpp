@@ -1,6 +1,5 @@
 #include "includes.h"
-#include "pch.h"
-#include "code/mk11.h"
+#include "src/mk11.h"
 #include <tlhelp32.h> 
 
 #define MKPIPE TEXT("\\\\.\\pipe\\MK11Unlocker")
@@ -54,7 +53,7 @@ LRESULT CALLBACK KeyboardProc(int code, WPARAM wParam, LPARAM lParam)
 				uint64_t res;
 				MK11Hooks::VR2Proxy(0, &res, "thethiny");
 				char* hash = (char*)res;
-				printf("Output: %X (%s)\n", res, hash);
+				printf("Output: %I64X (%s)\n", res, hash);
 			}
 
 			// Cheats
@@ -328,6 +327,7 @@ void PreGameHooks()
 {
 	GameTramp = Trampoline::MakeTrampoline(GetModuleHandle(nullptr));
 	std::cout << "Generated Trampolines" << std::endl;
+	MK11::IAT = ParsePEHeader();
 
 	if (SettingsMgr->FORCE_CHECK_VER)
 	{
@@ -382,7 +382,6 @@ void PreGameHooks()
 
 		if (SettingsMgr->bModLoader)
 		{
-			MK11::IAT = ParsePEHeader();
 			std::cout << "==bModLoader==" << std::endl;
 			uint64_t CreateFileW = (uint64_t)MK11::GetLibProcFromNT(MK11::sLFS.ModLoader);
 			if (!CreateFileW)
@@ -395,7 +394,6 @@ void PreGameHooks()
 				MK11::sActiveMods.bModLoader = true;
 				int32_t patched = 0;
 
-				//std::cout << "Patching " << MK11::GetLibDisplay(MK11::sLFS.ModLoader, CreateFileW) << std::endl;
 				std::cout << "Patching " << MK11::sLFS.ModLoader.LibName << "[" << MK11::sLFS.ModLoader.ProcName << "] (" << std::hex << CreateFileW << ")" << std::endl;
 
 				uint64_t lpPattern = (uint64_t)FindPattern(GetModuleHandleA(NULL), CFWPattern);
@@ -412,6 +410,19 @@ void PreGameHooks()
 				}
 			}
 			
+		}
+	}
+
+	if (1) // CURL_TEST
+	{
+		std::cout << "==CURLLLLLLL==" << std::endl;
+		uint64_t Func = (uint64_t)MK11::GetLibProcFromNT(MK11::sLFS.CurlSetOpt);
+		uint64_t Func2 = (uint64_t)MK11::GetLibProcFromNT(MK11::sLFS.CurlPerform);
+		if (Func && Func2)
+		{
+			std::cout << "Found " << MK11::sLFS.CurlSetOpt.LibName << "[" << MK11::sLFS.CurlSetOpt.ProcName << "] (" << std::hex << Func << ")" << std::endl;
+			std::cout << "Found " << MK11::sLFS.CurlPerform.LibName << "[" << MK11::sLFS.CurlPerform.ProcName << "] (" << std::hex << Func << ")" << std::endl;
+			// Do Stuff
 		}
 	}
 
@@ -475,6 +486,11 @@ void PreGameHooks()
 		}
 
 	}
+
+	printf("TESTTTTTTTTTTTTTTTTTTTTT\n");
+	InjectHook(GetGameAddr(0x140D35FC2), GameTramp->Jump(MK11Hooks::GetItemName), PATCH_CALL);
+	InjectHook(GetGameAddr(0x140D35D9E), GameTramp->Jump(MK11Hooks::GetItemPriceString), PATCH_CALL);
+	InjectHook(GetGameAddr(0x140D35D20), GameTramp->Jump(MK11Hooks::GetItemPrice), PATCH_CALL);
 }
 
 void UnlockerPipe()
@@ -520,12 +536,12 @@ void UnlockerPipe()
 			std::cout << "Pipe::Received (" << dwRead << "): " << received << "<-" << std::endl;
 
 			uint64_t res;
-			MK11Hooks::procVR2Function(0x1431B1FD0, &res, received.c_str());
+			MK11Hooks::ProcVR2Function(0x1431B1FD0, &res, received.c_str());
 			char* hash = (char*)res;
 
 			std::string to_send(hash);
 			to_send += "\n";
-			printf("Pipe::Sending: %s\n", to_send);
+			printf("Pipe::Sending: %s\n", to_send.c_str());
 
 			WriteFile(hPipe, to_send.c_str(), to_send.length(), &dwWritten, NULL);
 			FlushFileBuffers(hPipe);
@@ -550,8 +566,15 @@ void ProcessSettings()
 	// DLL Procs
 	MK11::sLFS.ModLoader		= MK11::ParseLibFunc(SettingsMgr->szModLoader);
 	MK11::sLFS.AntiCheatEngine	= MK11::ParseLibFunc(SettingsMgr->szAntiCheatEngine);
+	MK11::sLFS.CurlSetOpt		= MK11::ParseLibFunc("libcurl.curl_easy_setopt");
+	MK11::sLFS.CurlPerform		= MK11::ParseLibFunc("libcurl.curl_easy_perform");
 
 	std::cout << "Parsed Settings" << std::endl;
+}
+
+void DX12Error()
+{
+	MessageBoxA(NULL, "ASIMK11 doesn't officially support DX12 version of the game. It may misbehave.", "ASIMK11", MB_ICONEXCLAMATION);
 }
 
 void OnInitializeHook()
@@ -563,7 +586,7 @@ void OnInitializeHook()
 	if (process_name != expected_process)
 	{
 		if (process_name == expected_process_dx12)
-			MessageBoxA(NULL, "ASIMK11 doesn't officially support DX12 version of the game. It may misbehave.", "ASIMK11", MB_ICONEXCLAMATION);
+			CreateThread(NULL, NULL, (LPTHREAD_START_ROUTINE)DX12Error, NULL, NULL, NULL);
 	}
 
 	SettingsMgr->Init();

@@ -28,9 +28,9 @@ public:
 
 extern MK11Menu* GuiMenu;
 
-extern "C" __declspec(dllexport) ImGuiContext * __stdcall SharedPresent(ImGuiContext * ctx);
-extern "C" __declspec(dllexport) ImGuiContext * SharedStyle(ImGuiContext * ctx = 0);
-extern "C" __declspec(dllexport) void InitShared();
+extern "C" __declspec(dllexport) void __stdcall SharedPresent();
+extern "C" __declspec(dllexport) void SharedStyle();
+extern "C" __declspec(dllexport) void InitShared(ImGuiContext*);
 extern bool bSharedInit;
 
 // Kiero stuff

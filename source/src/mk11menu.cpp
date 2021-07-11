@@ -33,7 +33,6 @@ void MK11Menu::Draw()
 	SharedStyle();
 
 	ImGui::GetIO().MouseDrawCursor = true;
-	//if (!bSharedInit)
 	ImGui::Begin("ASIMK11 by thethiny");
 	// Tabs
 
@@ -168,7 +167,7 @@ void MK11Menu::Draw()
 			if (ImGui::BeginCombo("Ltr1", MK11::sIntroStruct.PChar))
 			{
 				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct.PName);
-				for (int j = 0; j <= Chara->intros; j++)
+				for (char j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
 					bool is_selected = (MK11::sIntroStruct.PChar == t);
@@ -204,7 +203,7 @@ void MK11Menu::Draw()
 			if (ImGui::BeginCombo("sLtr1", MK11::sIntroStruct.PChar2))
 			{
 				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct.PName2);
-				for (int j = 0; j <= Chara->intros; j++)
+				for (char j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
 					bool is_selected = (MK11::sIntroStruct.PChar2 == t);
@@ -254,7 +253,7 @@ void MK11Menu::Draw()
 			{
 
 				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct2.PName);
-				for (int j = 0; j <= Chara->intros; j++)
+				for (char j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
 					bool is_selected = (MK11::sIntroStruct2.PChar == t);
@@ -291,7 +290,7 @@ void MK11Menu::Draw()
 			{
 
 				auto Chara = std::find(MK11::sCharacters.begin(), MK11::sCharacters.end(), MK11::sIntroStruct2.PName2);
-				for (int j = 0; j <= Chara->intros; j++)
+				for (char j = 0; j <= Chara->intros; j++)
 				{
 					char t[2] = { 'A' + j };
 					bool is_selected = (MK11::sIntroStruct2.PChar2 == t);
@@ -325,7 +324,7 @@ void MK11Menu::Draw()
 			for (auto i = MK11::vSwappedFiles.rbegin(); i != MK11::vSwappedFiles.rend(); i++)
 			{			
 				char* dest;
-				uint32_t len = wcslen(i->c_str());
+				uint64_t len = wcslen(i->c_str());
 				dest = new char[len+1];
 				wcstombs(dest, i->c_str(), len);
 				dest[len] = '\0'; // Terminate String to avoid glitches in text
@@ -484,8 +483,8 @@ void MK11Menu::Draw()
 		ImGui::Spacing();
 	}
 
-	if (!InitImGui)
-		ImGui::End();
+	/*if (!InitImGui)
+		ImGui::End();*/ // No clue what this is
 
 }
 
@@ -533,15 +532,14 @@ LRESULT __stdcall WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lPar
 
 
 bool bSharedInit = false;
-void InitShared()
+void InitShared(ImGuiContext* ctx)
 {
 	bSharedInit = true;
+	ImGui::SetCurrentContext(ctx);
 }
 
-ImGuiContext* SharedStyle(ImGuiContext* ctx)
+void SharedStyle()
 {
-	if (ctx)
-		ImGui::SetCurrentContext(ctx);
 
 	//Style
 	ImGuiStyle* style = &ImGui::GetStyle();
@@ -596,22 +594,14 @@ ImGuiContext* SharedStyle(ImGuiContext* ctx)
 	colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
 	colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
 
-
-	return ImGui::GetCurrentContext();
 }
 
-ImGuiContext * __stdcall SharedPresent(ImGuiContext* ctx)
+void __stdcall SharedPresent()
 {
 	if (GuiMenu->GetActiveState())
 	{
-		ImGui::SetCurrentContext(ctx);
-
 		GuiMenu->Draw();
-
-		return ImGui::GetCurrentContext();
 	}
-	else
-		return ctx;
 }
 
 HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
