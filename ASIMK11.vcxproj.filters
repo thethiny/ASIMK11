@@ -111,6 +111,15 @@
     <ClCompile Include="source\src\eSettingsManager.cpp">
       <Filter>Source Files\Utils</Filter>
     </ClCompile>
+    <ClCompile Include="source\src\Unlocker\eItemsManager.cpp">
+      <Filter>Source Files\MK11</Filter>
+    </ClCompile>
+    <ClCompile Include="source\imgui\imgui_tables.cpp">
+      <Filter>Resource Files\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="source\utils\prettyprint.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\utils\CPPython\cppython.h">
@@ -148,9 +157,6 @@
     </ClInclude>
     <ClInclude Include="source\IniReader.h">
       <Filter>Resource Files\IniReader</Filter>
-    </ClInclude>
-    <ClInclude Include="source\utils\DelimStringReader.h">
-      <Filter>Resource Files\Utils</Filter>
     </ClInclude>
     <ClInclude Include="source\utils\MemoryMgr.h">
       <Filter>Resource Files\Utils</Filter>
@@ -203,5 +209,14 @@
     <ClInclude Include="source\src\eSettingsManager.h">
       <Filter>Header Files\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="source\src\Unlocker\eItemsManager.h">
+      <Filter>Header Files\MK11</Filter>
+    </ClInclude>
+    <ClInclude Include="source\utils\prettyprint.h">
+      <Filter>Header Files\Utils</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
 </Project>

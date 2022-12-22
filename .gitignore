@@ -2,4 +2,5 @@ Build
 Binaries
 .vs
 __pycache__
-unlocker pipe
+*_Test
+*.hint

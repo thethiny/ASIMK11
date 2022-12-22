@@ -8,11 +8,10 @@ What is it used for? It's used to modify game functions to make them do whatever
 - Anti CVD Mod Patch. Allows you to swap files.
 - Anti CVD 2 Patch. Allows you to modify files.
 - Mod Loader. Allows you to make a mods folder to keep all your mods in 1 place, so that you don't have to overwrite any file.
-- Camera Mod. That's right, camera mod has been integrated, so that you don't need multiple tools and keep track of multiple threads!
 - Fun Cheats. Some fun cheats that I use in my videos.
 
 ### How to use:
-Download the Latest MK11 hook version, and select the mods you want in the provided ini file. When a game updates, you need to change the addresses in the `[Addresses]` section of the ini. Addresses will be provided for you to add.
+Download the Latest MK11 hook version, and select the mods you want in the provided ini file. When a game updates, you need to change the addresses in the `[Addresses]` section of the ini. Addresses will be provided for you to add. **Update July 2021: Addresses have been replaced with Patterns or Proc Names.**
 
 To use file swaps (like moveset swap), create a folder called `MKSwap` in the root folder (Mortal Kombat 11 Folder), and inside it create a new folder similar to the file that you are copying. Example, to swap Rain's Friendship with Subzero, copy `Asset/RAIN_A_FRIENDSHIP.xxx` into `/MKSwap/Asset/SUBZERO_A_FRIENDSHIP.xxx`. Console will say `"Loaded Asset/RAIN_A_FRIENDSHIP.xxx from MKSwap"`.
 

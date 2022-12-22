@@ -4,3 +4,10 @@
 [submodule "source/utils/CPPython"]
 	path = source/utils/CPPython
 	url = https://github.com/thethiny/CPPython.git
+[submodule "source/utils/cpprestsdk"]
+	path = source/utils/cpprestsdk
+	url = https://github.com/microsoft/cpprestsdk.git
+[submodule ".\\source\\utils\\pybind11"]
+	path = .\\source\\utils\\pybind11
+	url = https://github.com/pybind/pybind11.git
+	branch = stable

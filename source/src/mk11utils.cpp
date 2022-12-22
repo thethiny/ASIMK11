@@ -1,4 +1,5 @@
 #include "mk11utils.h"
+#include "prettyprint.h"
 #include <map>
 
 using namespace Memory::VP;
@@ -27,7 +28,10 @@ int64 GetModuleEntryPoint(const char* name)
 int64 GetGameAddr(__int64 addr)
 {
 	int64 Entry = GetGameEntryPoint();
+	return addr > Entry - 40000000 ? addr : Entry + addr;
 	if (addr > Entry)
+		return addr;
+	if (addr > Entry - 40000000)
 		return addr;
 	return Entry + addr;
 }
@@ -124,7 +128,8 @@ HMODULE AwaitHModule(const char* name, uint64_t timeout)
 		}
 		toAwait = GetModuleHandle(name);	
 	}
-	std::cout << "Obtained Handle for " << name << std::endl;
+	if (SettingsMgr->iVerbose)
+		std::cout << "Obtained Handle for " << name << std::endl;
 	return toAwait;
 }
 
@@ -144,20 +149,83 @@ uint64_t* FindPattern(void* handle, std::string_view bytes)
 	return nullptr;
 }
 
+uint64_t HookPattern(std::string Pattern, const char* PatternName, void* HookProc, int64_t PatternOffset, PatchTypeEnum PatchType, uint64_t PrePat, uint64_t* Entry)
+{
+	uint64_t lpPattern;
+	if (PrePat)
+	{
+		lpPattern = PrePat;
+	}
+	else
+	{
+		lpPattern = (uint64_t)FindPattern(GetModuleHandleA(NULL), Pattern);
+		if (lpPattern != NULL)
+		{
+			SetColorGreen();
+			if (SettingsMgr->iVerbose)
+				std::cout << PatternName << " Pattern found at: " << std::hex << lpPattern << std::endl;
+			ResetColors();
+		}
+		else
+		{
+			SetColorRed();
+			std::cout << "Couldn't find pattern. " << PatternName << " Disabled" << std::endl;
+			ResetColors();
+			return lpPattern;
+		}
+	}
+
+	SetColorGreen();
+	if (Entry != NULL)
+	{
+		uint64_t FuncEntry = GetAbsoluteDestination(lpPattern + PatternOffset); // Already relative to game addres so GetGameAddr is unnecessary
+		*Entry = FuncEntry;
+		if (SettingsMgr->iVerbose)
+			std::cout << PatternName << " Function Entry found at " << FuncEntry << std::endl;
+	}
+	
+	uint64_t hook_address = lpPattern + PatternOffset;
+	if (SettingsMgr->iVerbose)
+		std::cout << "Injecting at " << hook_address << std::endl;
+	InjectHook(hook_address, HookProc, PatchType);
+	
+	ResetColors();
+	return lpPattern;
+}
+
+int32_t RelativeToAbsoluteAddress(uint64_t Caller, uint64_t Offset, uint16_t size)
+{
+	int32_t offset = 0;
+	memcpy(&offset, (uint64_t*)(Caller + Offset), size);
+	return offset;
+}
+
+uint64_t GetAbsoluteDestination(uint64_t Caller, uint64_t Offset, uint64_t FuncLen, uint16_t size)
+{
+	int32_t offset = RelativeToAbsoluteAddress(Caller, Offset, size);
+	return uint64_t(Caller + offset) + FuncLen;
+}
+
 void SetCheatPattern(std::string pattern, std::string name, uint64_t** lpPattern)
 {
 	if (!pattern.empty())
 	{
-		std::cout << "Searching for " << name << ": " << pattern << std::endl;
+		SetColorCyan();
+		if (SettingsMgr->iVerbose)
+			std::cout << "Searching for " << name << ": " << pattern << std::endl;
 		*lpPattern = FindPattern(GetModuleHandleA(NULL), pattern);
 		if (*lpPattern != nullptr)
 		{
-			std::cout << "Found at: " << std::hex << *lpPattern << std::dec << std::endl;
+			SetColorGreen();
+			if (SettingsMgr->iVerbose)
+				std::cout << "Found at: " << std::hex << *lpPattern << std::dec << std::endl;
 		}
 		else
 		{
-			std::cout << name << "Not found >> Disabled." << std::endl;
+			SetColorRed();
+			std::cout << name << " Not found >> Disabled." << std::endl;
 		}
+		ResetColors();
 	}
 }
 
@@ -193,7 +261,9 @@ LibMap ParsePEHeader()
 			std::string FuncName = (char*)import->Name;
 			FunctionsMap[FuncName] = pThunk->u1.Function;
 		}
-		IAT[szLibrary] = FunctionsMap;
+		std::string szLibraryStoreName = toLower(szLibrary);
+		// IAT[szLibrary] = FunctionsMap;
+		IAT[szLibraryStoreName] = FunctionsMap;
 	}
 
 	return IAT;
@@ -282,4 +352,15 @@ void RaiseException(const char* Message, int64_t ErrorCode)
 	std::string ErrorMessage = "Error: " + std::string(Message);
 	MessageBoxA(0, ErrorMessage.c_str(), "Error", MB_ICONERROR);
 	throw(ErrorCode);
+}
+
+bool IsHex(char c)
+{
+	return IsBase(c, 16);
+}
+
+bool IsBase(char c, int base)
+{
+	std::string alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
+	return alpha.substr(0, base).find(c) != -1;
 }

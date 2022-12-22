@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -17,6 +17,7 @@
     <ClCompile Include="source\imgui\imgui_draw.cpp" />
     <ClCompile Include="source\imgui\imgui_impl_dx11.cpp" />
     <ClCompile Include="source\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="source\imgui\imgui_tables.cpp" />
     <ClCompile Include="source\imgui\imgui_widgets.cpp" />
     <ClCompile Include="source\IniReader.cpp" />
     <ClCompile Include="source\kiero\kiero.cpp" />
@@ -30,8 +31,10 @@
     <ClCompile Include="source\src\mk11hook.cpp" />
     <ClCompile Include="source\src\mk11menu.cpp" />
     <ClCompile Include="source\src\mk11utils.cpp" />
+    <ClCompile Include="source\src\Unlocker\eItemsManager.cpp" />
     <ClCompile Include="source\utils\CPPython\pystring.cpp" />
     <ClCompile Include="source\utils\Patterns.cpp" />
+    <ClCompile Include="source\utils\prettyprint.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="source\imgui\imconfig.h" />
@@ -58,12 +61,16 @@
     <ClInclude Include="source\src\mk11hook.h" />
     <ClInclude Include="source\src\mk11menu.h" />
     <ClInclude Include="source\src\mk11utils.h" />
+    <ClInclude Include="source\src\Unlocker\eItemsManager.h" />
     <ClInclude Include="source\utils\CPPython\cppython.h" />
     <ClInclude Include="source\utils\CPPython\pystring.h" />
-    <ClInclude Include="source\utils\DelimStringReader.h" />
     <ClInclude Include="source\utils\MemoryMgr.h" />
     <ClInclude Include="source\utils\Patterns.h" />
+    <ClInclude Include="source\utils\prettyprint.h" />
     <ClInclude Include="source\utils\Trampoline.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cpp.hint" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
@@ -110,7 +117,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetExt>.asi</TargetExt>
-    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);</IncludePath>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath)</IncludePath>
     <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64)</LibraryPath>
     <OutDir>$(SolutionDir)Binaries\$(Configuration)\</OutDir>
     <IntDir>Build\$(Configuration)\</IntDir>
@@ -127,12 +134,13 @@
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>%LocalAppData%\Programs\Python\Python38\Include;$(ProjectDir)source\utils;$(ProjectDir)source\utils\CPPython;$(ProjectDir)source\utils\zmq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>DebugFull</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;$(projectDir)source\utils\zmq\lib\libzmq-v120-mt-4_3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -147,6 +155,7 @@
       <ConformanceMode>false</ConformanceMode>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>%LocalAppData%\Programs\Python\Python38\Include;$(ProjectDir)source\utils;$(ProjectDir)source\utils\CPPython;$(ProjectDir)source\utils\zmq\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -154,8 +163,9 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
-      <AdditionalDependencies>%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(projectDir)source\utils\zmq\lib\libzmq-v120-mt-4_3_4.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>3.0</Version>
+      <AdditionalLibraryDirectories>%LocalAppData%\Programs\Python\Python38\libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

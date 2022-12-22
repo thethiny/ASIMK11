@@ -27,7 +27,7 @@
 #include <iterator>
 #endif
 
-enum
+enum PatchTypeEnum
 {
 	PATCH_CALL,
 	PATCH_JUMP

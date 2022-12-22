@@ -6,25 +6,26 @@ public:
 	void Init();
 
 public:
-	// Booleans
+	// Debug
 	bool bEnableConsoleWindow;
 	bool bPauseOnStart;
+	int	iVerbose;
+	bool bDebug;
+
+	// Toggles
 	bool bDisableAntiCheatEngine;
 	bool bDisableAntiCVD;
-	bool bPatchUnlocker;
 	bool bModLoader;
-	bool bEnableCameraMod;
 	bool bEnableCheats;
 	bool bEnableIntroSwap;
-	bool bEnableTimeStop;
+	bool bPatchUnlocker;
+	bool bPatchCurl;
 
 	// Addresses
 
 	// Patterns
 	std::string pGameVerFull;
 	std::string pGameVer;
-	std::string pCam;
-	std::string pTimestop;
 	std::string pIntroSwap;
 	std::string pCVD1;
 	std::string pCVD2;
@@ -39,12 +40,17 @@ public:
 	std::string pComboInFatality;
 	std::string pBlockingDisabled;
 	std::string pFatalBlowAtMaxHealth;
+	// Unlocker
+	std::string pGetItemName;
+	std::string pGetItemPriceString;
+	std::string pGetItemPrice;
+	std::string pKollectableUnlocker;
+	std::string pVR2Function;
+	std::string pVR2s;
+	std::string pVR2x;
 
 	std::string hkCheats;
 	int iVKCheats;
-
-	std::string hkTimestop;
-	int iVKtimestop;
 
 	// Menu Section
 	std::string hkMenu;
@@ -58,6 +64,12 @@ public:
 	std::string szGameVer;
 	std::string szModLoader;
 	std::string szAntiCheatEngine;
+	std::string szCurlSetOpt;
+	std::string szCurlPerform;
+
+	//Private Server
+	std::string szMITMUrl;
+	bool bMITM;
 
 };
 

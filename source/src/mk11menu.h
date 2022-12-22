@@ -2,33 +2,40 @@
 #include "../includes.h"
 #include "mk11.h"
 
+
+#define TextSuccess(text) ImGui::TextColored(ImVec4(0.f, 1.f, 0.f, 1.f), text);
+#define TextWarning(text) ImGui::TextColored(ImVec4(1.f, 0.5f, 0.f, 1.f), text);
+#define TextError(text) ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), text);
+
 enum eTabs {
 	ERR = -1,
-	NONE,
+	ARGTYPE_NONE,
 	CHEATS,
 	SWAPS,
 	CAMERA,
-	UNLOCKER,
 	ANTICHEAT,
-	SECRET,
+	UNLOCKER,
+	PRIVATE_SERVER,
 };
 
-extern std::string szTabName[];
+extern std::map<eTabs, std::string> szTabName;
 
 class MK11Menu {
 private:
 	bool bIsActive = false;
-	eTabs iCurrentTab = eTabs::NONE;
+	char szHashString[256] = {};
 public:
 	void Draw();
 	bool GetActiveState();
 	void ToggleActive();
 	bool operator!() { return !bIsActive; }
+	operator bool() { return bIsActive; }
+	void SetUnlockerHash();
 };
 
 extern MK11Menu* GuiMenu;
 
-extern "C" __declspec(dllexport) void __stdcall SharedPresent();
+extern "C" __declspec(dllexport) void SharedPresent();
 extern "C" __declspec(dllexport) void SharedStyle();
 extern "C" __declspec(dllexport) void InitShared(ImGuiContext*);
 extern bool bSharedInit;

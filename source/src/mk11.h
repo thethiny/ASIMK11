@@ -1,7 +1,7 @@
 #pragma once
 #include "mk11utils.h"
 #include "mk11menu.h"
-#include "../utils/CPPython/cppython.h"
+#include <cppython.h>
 
 enum PLAYER_NUM
 {
@@ -27,12 +27,6 @@ enum MOD_HOOK_STATUS
 namespace MK11 {
 
 	// Structs
-	struct CamStruct {
-		bool bLogCam				= false;
-		bool bTimestopActive		= false;
-		bool bTimestopEnabled		= false;
-	};
-
 	struct IntroStruct {
 		char PName[100]				{ 0 };
 		char PName2[100]			{ 0 };
@@ -52,6 +46,8 @@ namespace MK11 {
 		bool bAntiCVD1				= false;
 		bool bAntiCVD2				= false;
 		bool bModLoader				= false;
+		bool bUnlocker				= false;
+		bool bCurl					= false;
 	};
 
 	struct CheatsStruct {
@@ -63,6 +59,7 @@ namespace MK11 {
 		std::string FullName;
 		std::string LibName;
 		std::string ProcName;
+		bool bIsValid = false;
 	};
 
 	struct LibMapsStruct {
@@ -71,6 +68,85 @@ namespace MK11 {
 		LibFuncStruct CurlSetOpt;
 		LibFuncStruct CurlPerform;
 	};
+
+	struct HTTPHeaderInstance
+	{
+		char* GameVersion;
+		uint64_t* OtherHeaderStuff;
+		uint64_t PAD;
+		uint32_t UNK;
+		uint16_t UNK2[2];
+		char RemainderOfHeader[4]; // it's a string
+
+	};
+
+	struct HTTPHeaderContainer
+	{
+		uint64_t HeaderSize;
+		HTTPHeaderInstance* Instance;
+	};
+
+	struct HTTPPostStruct
+	{
+		HTTPHeaderContainer* HeaderContainer; //0
+		char* ResponseBody; //8
+		int32_t ResponseBodySize; //10
+		int32_t UnknownSize; //14
+		char* ResponseStatus; //18
+		wchar_t* Unknown; //20
+		char* Body; //28
+		int32_t BodySize; //30
+		int32_t Unknown2; //30
+		uint64_t Unknown3;
+		uint64_t Unknown4;
+		char* HTTPEndpoint;
+		uint32_t HTTPEndpointSize;
+		uint32_t Unknown2Copy;
+		uint64_t Ignore[18];
+		char* Unk;
+		uint64_t UnkSize;
+		char* Platform;
+		uint64_t PlatformSize;
+		char* Unk2;
+		uint64_t Unk2Size;
+		char* Platform2;
+		uint64_t Platform2Size;
+		uint64_t Ignore3[4];
+		char* MainEndpoint;
+		uint64_t Ignore4;
+		char* Endpoint;
+		int32_t EndpointSize;
+	};
+
+	struct HTTPResponseStruct
+	{
+		uint64_t* ClassPointer;
+		char* ResponseBody;
+		uint32_t Sizes[2];
+		char* ResponseStatus;
+		wchar_t* Unknown;
+	};
+
+	struct UserKeysStruct
+	{
+		PyString SteamKeyBody		= ""; // Auth Token
+		PyString AuthTokenBody		= ""; // Send to Access Token
+		PyString AuthTokenResponse	= ""; // Access Token
+	};
+
+	struct GameReadyState
+	{
+		PyString szGameVersion	= "";
+		bool bSteamKey			= false;
+		bool bAuthToken			= false;
+		bool bAccessToken		= false;
+		bool bUsername			= false;
+		bool bSteamID			= false;
+		bool bGameVersion		= false;
+		bool bHash				= false;
+		bool bUnlock			= true;
+	};
+
 	
 	// Vars
 	extern std::vector<CharacterStruct>			sCharacters;
@@ -79,48 +155,29 @@ namespace MK11 {
 	extern uint64_t*							lpGameVersionFull;
 	extern std::vector<std::wstring>			vSwappedFiles;
 	extern LibMap								IAT;
+	extern std::map<uint64_t, HTTPPostStruct*>	CurlObjectMap;
 	// StructVars
-	extern CamStruct							sCamStruct;
 	extern IntroStruct							sIntroStruct;
 	extern IntroStruct							sIntroStruct2;
 	extern ActiveMods							sActiveMods;
 	extern CheatsStruct							sCheatsStruct;
 	extern LibMapsStruct						sLFS;
+	extern UserKeysStruct						sUserKeys;
+	extern GameReadyState						sGameState;
+
 	
 
 	// Functions
+	void DummyFunc();
+	uint64_t TrueFunc();
+	uint64_t FalseFunc();
 	std::string GetGameVersion();
 	std::string GetGameVersionFull();
 	void PopulateCharList();
 	bool operator==(const CharacterStruct& s1, std::string s2);
-	//LFS
+	// LFS
 	LibFuncStruct ParseLibFunc(CPPython::string);
 	void ParseLibFunc(LibFuncStruct&);
 	uint64_t* GetLibProcFromNT(const LibFuncStruct&);
+	void PrintErrorProcNT(const LibFuncStruct& LFS, uint8_t bMode);
 }
-
-
-namespace MK11Hooks {
-	void			IntroSwap(char* dest, char* source, uint64_t length);
-	void			TimestopFunction(uint64_t somePtr, uint32_t rvalue);
-	HANDLE			__stdcall CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile);
-	uint64_t*		__fastcall VR2Proxy(uint64_t seed, uint64_t* result_hash, const char* to_hash);
-	wchar_t*		__fastcall GetItemName(uint64_t thisptr);
-	wchar_t*		__fastcall GetItemPriceString(uint64_t thisptr);
-	uint64_t		__fastcall GetItemPrice(uint64_t thisptr);
-			
-	typedef			uint64_t*			(__fastcall VR2Function)			(uint64_t seed, uint64_t* result_hash, const char* to_hash);
-	typedef			wchar_t*			(__fastcall lpwsThisFunction)		(uint64_t thisptr);
-	typedef			uint64_t			(__fastcall ullThisFunction)		(uint64_t thisptr);
-	typedef			uint64_t*			(__fastcall lpullThisFunction)		(uint64_t thisptr);
-
-	// Unlocker
-	extern		VR2Function*			ProcVR2Function;
-	// Premium Shop
-	extern		ullThisFunction*		ProcGetItemPrice;
-	extern		lpwsThisFunction*		ProcGetItemName;
-	extern		lpwsThisFunction*		ProcGetItemPriceString;
-}
-
-
-

@@ -1,24 +1,31 @@
 #include "mk11.h"
 #include <filesystem>
 
-MK11::CamStruct MK11::sCamStruct;
-MK11::IntroStruct MK11::sIntroStruct, MK11::sIntroStruct2;
-MK11::ActiveMods MK11::sActiveMods;
-MK11::CheatsStruct MK11::sCheatsStruct;
-std::vector<std::wstring> MK11::vSwappedFiles;
-MK11::LibMapsStruct MK11::sLFS;
-uint64_t* MK11::lpGameVersionFull = nullptr;
-uint64_t* MK11::lpGameVersion = nullptr;
-LibMap MK11::IAT{};
+MK11::IntroStruct					MK11::sIntroStruct;
+MK11::IntroStruct					MK11::sIntroStruct2;
+MK11::ActiveMods					MK11::sActiveMods;
+MK11::CheatsStruct					MK11::sCheatsStruct;
+MK11::LibMapsStruct					MK11::sLFS;
+MK11::UserKeysStruct				MK11::sUserKeys;
+MK11::GameReadyState				MK11::sGameState;
+uint64_t*							MK11::lpGameVersionFull			= nullptr;
+uint64_t*							MK11::lpGameVersion				= nullptr;
+uint8_t								MK11::ulCharactersCount;
+std::vector<std::wstring>			MK11::vSwappedFiles;
+std::vector<MK11::CharacterStruct>	MK11::sCharacters;
+LibMap								MK11::IAT{};
+
+// Generic Functions
+
+void		MK11::DummyFunc()		{};
+uint64_t	MK11::TrueFunc()		{ return 0x1; }
+uint64_t	MK11::FalseFunc()		{ return 0x0; }
 
 
 bool MK11::operator==(const MK11::CharacterStruct& s1, std::string s2)
 {
 	return (s1.name == s2);
 }
-
-std::vector<MK11::CharacterStruct> MK11::sCharacters;
-uint8_t MK11::ulCharactersCount;
 
 void MK11::PopulateCharList()
 {
@@ -65,115 +72,6 @@ void MK11::PopulateCharList()
 	}
 }
 
-void MK11Hooks::IntroSwap(char* dest, char* source, uint64_t length)
-{
-	char* p1_string;
-	char* p1_string_replace;
-	bool found = false;
-	if (MK11::sIntroStruct.bEnabled && MK11::sIntroStruct.PName[0] && MK11::sIntroStruct.PChar[0] && MK11::sIntroStruct.PName2[0] && MK11::sIntroStruct.PChar2[0]) // Populated
-	{
-		p1_string = new char[strlen(MK11::sIntroStruct.PName) + 25 + 1]; // 1 Null Terminator
-		sprintf(p1_string, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct.PName, MK11::sIntroStruct.PChar[0]);
-		if (MK11::sIntroStruct.PName == "*")
-		{
-			// Get Name Here
-		}
-		if (MK11::sIntroStruct.PChar[0] == '*')
-		{
-			// Get Letter Here
-		}
-
-		if (!strcmp(p1_string, source)) // Found the string I want to replace
-		{
-			p1_string_replace = new char[strlen(MK11::sIntroStruct.PName2) + 25 + 1]; // 1 Null Terminator
-			sprintf(p1_string_replace, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct.PName2, MK11::sIntroStruct.PChar2[0]);
-			std::cout << "IntroSwap::Swapping " << source << " <-> " << p1_string_replace << std::endl;
-			source = p1_string_replace;
-			found = true;
-		}
-	}
-
-	char* p2_string;
-	char* p2_string_replace;
-	if (!found && MK11::sIntroStruct2.bEnabled && MK11::sIntroStruct2.PName[0] && MK11::sIntroStruct2.PChar[0] && MK11::sIntroStruct2.PName2[0] && MK11::sIntroStruct2.PChar2[0]) // Populated
-	{
-		p2_string = new char[strlen(MK11::sIntroStruct2.PName) + 25 + 1]; // 1 Null Terminator
-		sprintf(p2_string, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct2.PName, MK11::sIntroStruct2.PChar[0]);
-		if (MK11::sIntroStruct2.PName == "*")
-		{
-			// Get Name Here
-		}
-		if (MK11::sIntroStruct2.PChar[0] == '*')
-		{
-			// Get Letter Here
-		}
-
-		if (!strcmp(p2_string, source)) // Found the string I want to replace
-		{
-			p2_string_replace = new char[strlen(MK11::sIntroStruct2.PName2) + 25 + 1]; // 1 Null Terminator
-			sprintf(p2_string_replace, "%s_%c_CHARINTRO_SCRIPTASSETS", MK11::sIntroStruct2.PName2, MK11::sIntroStruct2.PChar2[0]);
-			std::cout << "IntroSwap::Swapping " << source << " <-> " << p2_string_replace << std::endl;
-			source = p2_string_replace;
-		}
-	}
-
-	length = strlen(source) +1; // Auto Get Length + Null Terminator
-	memcpy(dest, source, length);
-	//std::cout << "IntroSwap::Loaded " << source << std::endl;
-}
-
-void MK11Hooks::TimestopFunction(uint64_t somePtr, uint32_t rvalue)
-{
-	uint64_t rax = *(uint64_t*)(somePtr);
-
-	if (!MK11::sCamStruct.bTimestopActive)
-		rvalue = *(uint32_t*)(somePtr + 0x18);
-
-	if (*(uint32_t*)(somePtr + 0x14) == rvalue)
-		return;
-	uint64_t function_addr = *(uint64_t*)(rax + 0xD8);
-	*(uint32_t*)(somePtr + 0x14) = rvalue;
-	((void (*)(uint64_t, uint32_t))function_addr)(somePtr, rvalue);
-}
-
-HANDLE __stdcall MK11Hooks::CreateFileProxy(LPCWSTR lpFileName, DWORD dwDesiredAccess, DWORD dwShareMode, LPSECURITY_ATTRIBUTES lpSecurityAttributes, DWORD dwCreationDisposition, DWORD dwFlagsAndAttributes, HANDLE hTemplateFile)
-{
-	if (lpFileName)
-	{
-		//std::wstring fileName = lpFileName;
-		wchar_t* wcFileName = (wchar_t*)lpFileName;
-		std::wstring fileName(wcFileName, wcslen(wcFileName));
-		if (!wcsncmp(wcFileName, L"..", 2))
-		{
-			std::wstring wsSwapFolder = L"MKSwap";
-			std::wstring newFileName = L"..\\" + wsSwapFolder + fileName.substr(2, fileName.length() - 2);
-			if (std::filesystem::exists(newFileName.c_str()))
-			{
-				wprintf(L"Loading %s from %s\n", wcFileName, wsSwapFolder.c_str());
-				MK11::vSwappedFiles.push_back(wcFileName);
-				return CreateFileW(newFileName.c_str(), dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-			}
-		}
-		
-	}
-	
-	return CreateFileW(lpFileName, dwDesiredAccess, dwShareMode, lpSecurityAttributes, dwCreationDisposition, dwFlagsAndAttributes, hTemplateFile);
-}
-
-// Unlocker Part
-MK11Hooks::VR2Function* MK11Hooks::ProcVR2Function = (MK11Hooks::VR2Function*)(GetGameAddr(0x3D9F760));
-
-uint64_t* __fastcall MK11Hooks::VR2Proxy(uint64_t seed, uint64_t* result_hash, const char* to_hash)
-{
-	printf("seed: %llX\n", seed);
-	printf("result_hash: %llX\n", (uint64_t)result_hash);
-	printf("to_hash: %llX (%s)\n", (uint64_t)to_hash, to_hash);
-
-	uint64_t* return_value = ProcVR2Function(0, result_hash, to_hash);
-	printf("hash: %llX (%s)\n", (uint64_t)return_value, (char*)*return_value);
-
-	return return_value;
-}
 
 std::string MK11::GetGameVersion()
 {
@@ -212,13 +110,16 @@ MK11::LibFuncStruct MK11::ParseLibFunc(CPPython::string path)
 	auto vars = path.rsplit(".", 1);
 
 	if (vars.size() != 2)
-		throw (-1);
+		//RaiseException("Incorrect Argument", -1);
+		return LFS;
 	
 	LFS.FullName = path;
 	LFS.LibName = vars[0].lower();
 	LFS.ProcName = vars[1];
 
 	LFS.LibName = CPPython::string(LFS.LibName).endswith(".dll") || CPPython::string(LFS.LibName).endswith(".exe") ? LFS.LibName : LFS.LibName + ".dll";
+
+	LFS.bIsValid = true;
 
 	return LFS;
 }
@@ -230,33 +131,17 @@ void MK11::ParseLibFunc(MK11::LibFuncStruct& LFS)
 
 uint64_t* MK11::GetLibProcFromNT(const MK11::LibFuncStruct& LFS)
 {
-	return (uint64_t*)IAT[LFS.LibName][LFS.ProcName];
+	return LFS.bIsValid ? (uint64_t*)IAT[LFS.LibName][LFS.ProcName] : nullptr;
 }
 
-MK11Hooks::lpwsThisFunction*	MK11Hooks::ProcGetItemName				= (MK11Hooks::lpwsThisFunction*)	(GetGameAddr(0x140EC0980));
-MK11Hooks::lpwsThisFunction*	MK11Hooks::ProcGetItemPriceString		= (MK11Hooks::lpwsThisFunction*)	(GetGameAddr(0x140EC0980));
-MK11Hooks::ullThisFunction*		MK11Hooks::ProcGetItemPrice				= (MK11Hooks::ullThisFunction*)		(GetGameAddr(0x140722320));
-
-wchar_t* __fastcall MK11Hooks::GetItemName(uint64_t thisptr)
+void MK11::PrintErrorProcNT(const MK11::LibFuncStruct& LFS, uint8_t bMode)
 {
-	wchar_t* name = ProcGetItemName(thisptr);
-	printf("Item[%llX] Name: %ls\n", thisptr, name);
-	name = L"Free Item";
-	return name;
-};
-
-wchar_t* __fastcall MK11Hooks::GetItemPriceString(uint64_t thisptr)
-{
-	wchar_t* price = ProcGetItemPriceString(thisptr);
-	printf("Item[%llX]\tItem Display Price: %ls\n", thisptr, price);
-	price = L"0";
-	return price;
-};
-
-uint64_t __fastcall MK11Hooks::GetItemPrice(uint64_t thisptr)
-{
-	uint64_t price = ProcGetItemPrice(thisptr);
-	printf("Parsed Obj[%llX]\tItem Buy Price: %llu\n", thisptr, price);
-	price = 0;
-	return price;
-};
+	if (bMode == 1)
+		printfError("Couldn't find %s in %s!\n", LFS.ProcName, LFS.LibName);
+	else if (bMode == 0)
+		printfError("Couldn't patch %s!\n", LFS.ProcName);
+	else if (bMode == 2)
+		printfError("Couldn't patch %s!\n", LFS.LibName);
+	else
+		printfError("Couldn't patch %s::%s!\n", LFS.LibName, LFS.ProcName);
+}
