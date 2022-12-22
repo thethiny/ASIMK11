@@ -11,3 +11,6 @@
 	path = .\\source\\utils\\pybind11
 	url = https://github.com/pybind/pybind11.git
 	branch = stable
+[submodule "source/kiero"]
+	path = source/kiero
+	url = https://github.com/Rebzzel/kiero.git
